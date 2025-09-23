@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from backend.app.auth.validate import get_user
 
 app = FastAPI()
 
@@ -12,5 +14,5 @@ app.add_middleware(
 )
 
 @app.get("/")
-async def read_root():
-    return {"Hello": "World"}
+async def read_root(user = Depends(get_user)):
+    return {"Hello": "World", "user": user}

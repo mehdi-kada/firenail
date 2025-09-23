@@ -1,0 +1,11 @@
+import { LoginForm } from "@/components/auth/loginForm";
+
+export default function Login() {
+  return (
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+6      <div className="w-full max-w-sm">
+7        <LoginForm />
+8      </div>
+9    </div>
+  );
+}
