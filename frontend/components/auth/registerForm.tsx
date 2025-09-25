@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { OauthButton } from './OauthButton'
 
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
@@ -110,6 +111,8 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
               </Link>
             </div>
           </form>
+
+          <OauthButton/>
         </CardContent>
       </Card>
     </div>
