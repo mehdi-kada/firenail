@@ -24,7 +24,7 @@ export function LandingNav({ className }: LandingNavProps) {
 					aria-label="ThumbnailAI home"
 				>
 					<img
-						src="/ChatGPT Image Sep 24, 2025, 08_56_24 PM.png"
+						src="/ChatGPT-Image-Sep-24_-2025_-08_56_24-PM.svg"
 						alt="ThumbnailAI Logo"
 						className="h-15 w-auto"
 					/>
