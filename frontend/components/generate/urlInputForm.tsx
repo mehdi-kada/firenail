@@ -5,18 +5,10 @@ import { isAxiosError } from 'axios'
 
 import { cn } from '@/lib/utils'
 import api from '@/lib/axios/axios'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 
-type UrlInputFormProps = React.ComponentPropsWithoutRef<'div'>
+type UrlInputFormProps = React.ComponentPropsWithoutRef<'form'>
 
 const GENERATE_ENDPOINT = '/generate'
 
@@ -75,35 +67,29 @@ export function UrlInputForm({ className, ...props }: UrlInputFormProps) {
   }
 
   return (
-    <Card className={cn('w-full max-w-xl', className)} {...props}>
-      <CardHeader>
-        <CardTitle>Generate thumbnails</CardTitle>
-        <CardDescription>Drop in a video URL and we\'ll handle the rest.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-          <div className="grid gap-2">
-            <Label htmlFor="source-url">Source URL</Label>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Input
-                id="source-url"
-                type="url"
-                placeholder="https://example.com/video"
-                value={url}
-                onChange={(event) => setUrl(event.target.value)}
-                aria-invalid={Boolean(error)}
-                autoComplete="url"
-                required
-              />
-              <Button type="submit" className="sm:w-auto" disabled={isSubmitting} aria-busy={isSubmitting}>
-                {isSubmitting ? 'Submitting…' : 'Generate'}
-              </Button>
-            </div>
-          </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          {status && <p className="text-sm text-muted-foreground">{status}</p>}
-        </form>
-      </CardContent>
-    </Card>
+    <form onSubmit={handleSubmit} className={cn('', className)} {...props} noValidate>
+      <div className="relative">
+        <Input
+          className="w-full h-14 pl-6 pr-36 rounded-full bg-secondary-background border border-border focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+          placeholder="Enter YouTube video URL"
+          type="url"
+          value={url}
+          onChange={(event) => setUrl(event.target.value)}
+          aria-invalid={Boolean(error)}
+          autoComplete="url"
+          required
+        />
+        <Button
+          className="absolute inset-y-2 right-1.5 px-8 py-2 bg-primary text-white text-sm font-bold rounded-full hover:bg-opacity-90 transition-all"
+          type="submit"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
+        >
+          {isSubmitting ? 'Submitting…' : 'Generate'}
+        </Button>
+      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      {status && <p className="text-sm text-muted-foreground">{status}</p>}
+    </form>
   )
 }
