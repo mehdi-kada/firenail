@@ -15,7 +15,7 @@ async def analyze_text(text: str) -> Dict[str, Any]:
         async with session.post(
             'https://openrouter.ai/api/alpha/responses',
             headers={
-            'Authorization': 'Bearer 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',
+            'Authorization': f'Bearer {os.getenv("OPENROUTER_API_KEY")}',
             'Content-Type': 'application/json',
             },
             json={

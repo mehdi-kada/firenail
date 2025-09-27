@@ -1,5 +1,9 @@
+import os
+from dotenv import load_dotenv
 from typing import Any, List, Dict
 import requests
+
+load_dotenv()
 
 url = "https://api.firecrawl.dev/v2/search"
 
@@ -26,7 +30,7 @@ async def crawl_images(images: str):
     }
 
     headers = {
-        "Authorization": "Bearer fc-92d2519e402241be8b2a5df8e601cb9a",
+        "Authorization": f"Bearer {os.getenv('FIRECRAWL_KEY')}",
         "Content-Type": "application/json"
     }
 
@@ -34,8 +38,3 @@ async def crawl_images(images: str):
 
     return response.json()
 
-if __name__ == "__main__":
-    import asyncio
-    result = asyncio.run(crawl_images("Fortnite Travis Scott concert event"))
-    images_url = (result.get("data").get("images")[0].get("imageUrl"))
-    print(images_url)

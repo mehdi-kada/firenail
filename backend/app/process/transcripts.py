@@ -9,8 +9,6 @@ async def get_transcripts(url: str):
     }
 
     try:
-
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             video_id = info.get("id", None)
