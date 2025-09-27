@@ -1,7 +1,9 @@
 import asyncio
-from json import load
 from logging.config import fileConfig
 from app.database.database import Base
+
+# Import models so Alembic can detect them
+from app.models import Profile, Image
 
 import os
 from dotenv import load_dotenv

@@ -13,7 +13,7 @@ engine = create_async_engine(
     poolclass=NullPool
 )
 
-AsyncSessionLocal = async_sessionmaker (auto_commit=True, auto_flush=True, bind=engine)
+AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 class Base(DeclarativeBase):
     pass
