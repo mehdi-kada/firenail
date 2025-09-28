@@ -3,7 +3,7 @@ from logging.config import fileConfig
 from app.database.database import Base
 
 # Import models so Alembic can detect them
-from app.models import Profile, Image
+from app.models import *
 
 import os
 from dotenv import load_dotenv
