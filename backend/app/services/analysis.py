@@ -1,7 +1,7 @@
 import aiohttp
 import os 
 from dotenv import load_dotenv
-from app.constants.prompts import analysis_prompt, transcript_prompt_test
+from app.constants.prompts import analysis_prompt
 import re
 import json
 import ast
@@ -15,7 +15,7 @@ load_dotenv()
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=2, min=1, max=8),
 )
-def analyze_transcript(transcript: str) -> Dict[str, Any]:
+def analyze_transcript(prompt: str) -> Dict[str, Any]:
     response = httpx.post(
         "https://openrouter.ai/api/v1/chat/completions",
         headers={
@@ -25,8 +25,7 @@ def analyze_transcript(transcript: str) -> Dict[str, Any]:
         json={
             "model": "deepseek/deepseek-chat-v3.1:free",
             "messages": [
-                {"role": "system", "content": analysis_prompt(transcript_prompt_test)},
-                {"role": "user", "content": transcript},
+                {"role": "user", "content": prompt},
             ],
         },
         timeout=30,

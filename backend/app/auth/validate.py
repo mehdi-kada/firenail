@@ -33,7 +33,7 @@ def get_current_user(token = Depends(bearer_scheme)):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User ID not in token",
             )
-        return {"user_id": user_id, "claims": payload}
+        return user_id
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
