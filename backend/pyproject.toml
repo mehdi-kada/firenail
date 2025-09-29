@@ -13,6 +13,7 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "sqlalchemy>=2.0.43",
     "supabase>=2.20.0",
+    "tenacity>=9.1.2",
     "uvicorn>=0.35.0",
     "youtube-transcript-api>=1.2.2",
     "yt-dlp>=2025.9.23",

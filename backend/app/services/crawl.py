@@ -7,7 +7,7 @@ load_dotenv()
 
 url = "https://api.firecrawl.dev/v2/search"
 
-async def crawl_images(images: str):
+def crawl_images(images: str):
 
     payload = {
     "query": "Fortnite Travis Scott concert event",
