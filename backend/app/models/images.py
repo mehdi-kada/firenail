@@ -1,12 +1,15 @@
 import uuid
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy import ForeignKey, DateTime, func, Text, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.database.database import Base
-from app.models.profiles import Profile
+
+if TYPE_CHECKING:
+    from .profiles import Profile
+    from .jobs import Job
 
 
 class Image(Base):
@@ -21,3 +24,4 @@ class Image(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     profile: Mapped["Profile"] = relationship("Profile", back_populates="images")
+    job: Mapped["Job"] = relationship("Job", back_populates="images")

@@ -7,7 +7,7 @@ load_dotenv()
 celery_app = Celery("thumbnail_generator",
                     broker=os.getenv("CELERY_BROKER_URL"),
                     backend=os.getenv("CELERY_RESULT_BACKEND"),
-                    include=['backend.app.celery.tasks']
+                    include=['app.celery.tasks']
                         )
 
 celery_app.conf.update(

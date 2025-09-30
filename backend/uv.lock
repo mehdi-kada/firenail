@@ -141,6 +141,7 @@ dependencies = [
     { name = "celery" },
     { name = "fastapi", extra = ["standard"] },
     { name = "psycopg2-binary" },
+    { name = "redis" },
     { name = "sqlalchemy" },
     { name = "supabase" },
     { name = "tenacity" },
@@ -157,6 +158,7 @@ requires-dist = [
     { name = "celery", specifier = ">=5.5.3" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.116.2" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
+    { name = "redis", specifier = ">=5.2.0" },
     { name = "sqlalchemy", specifier = ">=2.0.43" },
     { name = "supabase", specifier = ">=2.20.0" },
     { name = "tenacity", specifier = ">=9.1.2" },
@@ -1028,6 +1030,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d9/00/b086740c42757d41d61e9c300cdda8188f90d2d0ef1caf41691c3ca57737/realtime-2.20.0.tar.gz", hash = "sha256:969fbfd4bcf4973e5500554c3a46b95e02f2d09753c5141e525fbd0397ee9b0a", size = 18158, upload-time = "2025-09-22T19:13:21.958Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ab/af/9910f8d55bdacd493c41f9a901bcd5b1892b9a3b1f216b5b751a58cda1df/realtime-2.20.0-py3-none-any.whl", hash = "sha256:42bacbbae6a04a43665812e4904a5f42b2b2a28a34fe0f4b97531d6763f46111", size = 21696, upload-time = "2025-09-22T19:13:20.517Z" },
+]
+
+[[package]]
+name = "redis"
+version = "6.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0d/d6/e8b92798a5bd67d659d51a18170e91c16ac3b59738d91894651ee255ed49/redis-6.4.0.tar.gz", hash = "sha256:b01bc7282b8444e28ec36b261df5375183bb47a07eb9c603f284e89cbc5ef010", size = 4647399, upload-time = "2025-08-07T08:10:11.441Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e8/02/89e2ed7e85db6c93dfa9e8f691c5087df4e3551ab39081a4d7c6d1f90e05/redis-6.4.0-py3-none-any.whl", hash = "sha256:f0544fa9604264e9464cdf4814e7d4830f74b165d52f2a330a760a88dd248b7f", size = 279847, upload-time = "2025-08-07T08:10:09.84Z" },
 ]
 
 [[package]]

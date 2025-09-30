@@ -14,6 +14,7 @@ from app.models.profiles import Profile
 if TYPE_CHECKING:
     from .videos import Video
     from .job_events import JobEvent
+    from .images import Image
 
 
 class JobStatus(str, Enum):
@@ -38,3 +39,4 @@ class Job(Base):
 
     videos: Mapped[List["Video"]] = relationship("Video", back_populates="job", cascade="all, delete-orphan")
     job_events: Mapped[List["JobEvent"]] = relationship("JobEvent", back_populates="job", cascade="all, delete-orphan")
+    images: Mapped[List["Image"]] = relationship("Image", back_populates="job", cascade="all, delete-orphan")
