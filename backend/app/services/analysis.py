@@ -16,14 +16,18 @@ load_dotenv()
     wait=wait_exponential(multiplier=2, min=1, max=8),
 )
 def analyze_transcript(prompt: str) -> Dict[str, Any]:
+    api_key = os.environ.get('OPENROUTER_KEY')
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY or OPENROUTER_KEY environment variable not set")
+    
     response = httpx.post(
         "https://openrouter.ai/api/v1/chat/completions",
         headers={
-            "Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         },
         json={
-            "model": "deepseek/deepseek-chat-v3.1:free",
+            "model": "x-ai/grok-4-fast:free",
             "messages": [
                 {"role": "user", "content": prompt},
             ],
@@ -32,7 +36,14 @@ def analyze_transcript(prompt: str) -> Dict[str, Any]:
     )
     response.raise_for_status()
     data = response.json()
-    raw = data["choices"][0]["message"]["content"]
+    
+    # Handle missing keys in response
+    try:
+        raw = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError) as e:
+        print(f"Error parsing OpenRouter response: {e}")
+        print(f"Response data: {data}")
+        raise ValueError(f"Invalid OpenRouter response structure: {e}") from e
     
     m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.S | re.I)
     json_text = m.group(1) if m else raw.strip()

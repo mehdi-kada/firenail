@@ -14,8 +14,9 @@ def fetch_metadata(url: str) -> VideoMeta:
 
 def fetch_transcript(video_id: str) -> str:
 		try:
-				text = YouTubeTranscriptApi()
-				transcript = text.get_transcript(video_id, languages=["en"])
+				youtube_t = YouTubeTranscriptApi()
+				fetched_transcript = youtube_t.fetch(video_id, languages=["en"])
+				transcript = fetched_transcript.to_raw_data()
 		except TranscriptsDisabled:
 				raise RuntimeError("Transcript disabled for this video")
 		return " ".join(segment["text"] for segment in transcript)
