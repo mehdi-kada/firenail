@@ -10,12 +10,14 @@ import { Button } from '@/components/ui/button'
 
 type UrlInputFormProps = React.ComponentPropsWithoutRef<'form'>
 
-const GENERATE_ENDPOINT = '/generate'
+const TASKS_ENDPOINT = '/api/tasks/'
 
 export function UrlInputForm({ className, ...props }: UrlInputFormProps) {
   const [url, setUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
+  const [taskId, setTaskId] = useState<string | null>(null)
+  const [taskStatus, setTaskStatus] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const validateUrl = (value: string) => {
@@ -49,10 +51,15 @@ export function UrlInputForm({ className, ...props }: UrlInputFormProps) {
     setIsSubmitting(true)
     setError(null)
     setStatus(null)
+    setTaskId(null)
+    setTaskStatus(null)
 
     try {
-      await api.post(GENERATE_ENDPOINT, { url: normalizedUrl })
-      setStatus('Your link was sent. We\'ll start generating in the background.')
+      const response = await api.post(TASKS_ENDPOINT, { url: normalizedUrl })
+      const data = response.data
+      setTaskId(data.task_id)
+      setTaskStatus(data.status)
+      setStatus('Task created successfully! Job is now being processed.')
       setUrl('')
     } catch (err: unknown) {
       if (isAxiosError(err)) {
@@ -88,8 +95,15 @@ export function UrlInputForm({ className, ...props }: UrlInputFormProps) {
           {isSubmitting ? 'Submitting…' : 'Generate'}
         </Button>
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      {status && <p className="text-sm text-muted-foreground">{status}</p>}
+      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+      {status && <p className="mt-2 text-sm text-green-600">{status}</p>}
+      {taskId && (
+        <div className="mt-4 p-4 bg-secondary-background rounded-lg border border-border">
+          <h3 className="font-semibold mb-2">Task Details</h3>
+          <p className="text-sm"><strong>Task ID:</strong> {taskId}</p>
+          <p className="text-sm"><strong>Status:</strong> {taskStatus}</p>
+        </div>
+      )}
     </form>
   )
 }

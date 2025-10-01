@@ -12,6 +12,7 @@ from app.constants.prompts import analysis_prompt
 def process_video_pipeline(self, job_id: str):
     job_uuid = UUID(job_id)
 
+    print(f"Starting video processing pipeline for job {job_id}")
     with sessionLocal() as session:
         job = session.get(Job, job_uuid)
         if not job : 
@@ -38,7 +39,6 @@ def process_video_pipeline(self, job_id: str):
         keywords = analysis_result.get("image_search_keywords",[])
         step("analysis", {"summary": summary[:140],"keywords":keywords})
 
-        # Fetch and download images for each keyword
         image_paths = []
         image_records = []
         for keyword in keywords:
@@ -62,7 +62,6 @@ def process_video_pipeline(self, job_id: str):
         with sessionLocal() as session:
             job = session.get(Job, job_uuid)
             if job:
-                # Add video record
                 video_record = Video(
                     job_id=job_uuid,
                     youtube_id=meta.video_id,
@@ -72,7 +71,6 @@ def process_video_pipeline(self, job_id: str):
                 )
                 session.add(video_record)
                 
-                # Add all image records
                 for img_data in image_records:
                     image_record = Image(
                         job_id=job_uuid,
@@ -83,7 +81,6 @@ def process_video_pipeline(self, job_id: str):
                     )
                     session.add(image_record)
                 
-                # Update job status
                 job.status = JobStatus.completed
                 session.commit()
 

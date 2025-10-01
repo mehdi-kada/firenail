@@ -1,25 +1,32 @@
-from requests import session
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.pool import NullPool
 from sqlalchemy import create_engine
+from uuid import uuid4
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")  # Change to your actual database URL
-SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL", "sqlite:///./test.db")  # Change to your actual sync database URL
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
+SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL", "sqlite:///./test.db")
 
-engine = create_async_engine(
+# Async engine for FastAPI routes
+async_engine = create_async_engine(
     DATABASE_URL,
-    poolclass=NullPool
+    poolclass=NullPool,
+    connect_args={
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+        "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",
+    },
 )
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+# Sync engine for Celery tasks and migrations
+sync_engine = create_engine(SYNC_DATABASE_URL, pool_pre_ping=True)
 
-AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
-sessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=async_engine)
+sessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
 
 class Base(DeclarativeBase):
     pass
