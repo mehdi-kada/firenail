@@ -31,5 +31,16 @@ def crawl_images(keyword: str, limit: int = 1) -> List[Dict]:
     response.raise_for_status()
     
     data = response.json()
-    return data.get("data", [])
+    
+    # Firecrawl v2 API returns: {"success": true, "data": {"images": [...]}}
+    if "data" in data and isinstance(data["data"], dict):
+        images = data["data"].get("images", [])
+    elif "images" in data:
+        images = data.get("images", [])
+    elif "data" in data and isinstance(data["data"], list):
+        images = data["data"]
+    else:
+        images = []
+    
+    return images if isinstance(images, list) else []
 

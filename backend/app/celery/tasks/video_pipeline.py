@@ -47,15 +47,21 @@ def process_video_pipeline(self, job_id: str):
                 image_data = images[0]
                 image_url = image_data.get("imageUrl")
                 if image_url:
-                    local_path = storage.download_and_save_image(image_url, str(job_uuid), keyword)
-                    image_paths.append({"keyword": keyword, "path": local_path, "url": image_url})
-                    
-                    # Prepare image record for batch insert
-                    image_records.append({
-                        "keyword": keyword,
-                        "local_path": local_path,
-                        "firecrawl_payload": image_data
-                    })
+                    try:
+                        local_path = storage.download_and_save_image(image_url, str(job_uuid), keyword)
+                        image_paths.append({"keyword": keyword, "path": local_path, "url": image_url})
+                        
+                        # Prepare image record for batch insert
+                        image_records.append({
+                            "keyword": keyword,
+                            "local_path": local_path,
+                            "firecrawl_payload": image_data
+                        })
+                    except Exception as e:
+                        print(f"Failed to download image for keyword '{keyword}': {e}")
+                        continue
+            else:
+                print(f"No images found for keyword: {keyword}")
         
         step("images", {"count": len(image_paths), "paths": [p["path"] for p in image_paths]})
 
