@@ -1,6 +1,7 @@
 from uuid import UUID
 from celery import shared_task
 from app.services import transcripts, analysis, storage, events, crawl
+from app.services.gemini_thumbnail import generate_thumbnail
 from app.celery import celery_app
 from app.database.database import sessionLocal
 from app.models.jobs import Job, JobStatus
@@ -64,6 +65,16 @@ def process_video_pipeline(self, job_id: str):
                 print(f"No images found for keyword: {keyword}")
         
         step("images", {"count": len(image_paths), "paths": [p["path"] for p in image_paths]})
+
+        thumbnail_url = None
+        if len(image_paths) >= 3:
+            thumbnail_prompt = f"Create a YouTube thumbnail for: {meta.title}. Summary: {summary}"
+            thumbnail_url = generate_thumbnail(
+                job_id=str(job_uuid),
+                prompt=thumbnail_prompt,
+                reference_image_paths=[p["path"] for p in image_paths[:3]]
+            )
+            step("thumbnail", {"url": thumbnail_url})
 
         with sessionLocal() as session:
             job = session.get(Job, job_uuid)

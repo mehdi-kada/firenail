@@ -1,9 +1,9 @@
 import uuid
-import os
 import requests
 from pathlib import Path
+from typing import Optional
+
 from app.supabase.supabase_client import supabase_admin
-import io
 
 
 def upload_thumbnail(job_id: str, image_bytes: bytes):
@@ -29,3 +29,17 @@ def download_and_save_image(image_url: str, job_id: str, keyword: str) -> str:
         f.write(response.content)
     
     return str(filepath)
+
+
+def delete_local_file(path: str) -> bool:
+    file_path = Path(path)
+    if not file_path.exists():
+        return False
+    try:
+        file_path.unlink()
+        parent: Optional[Path] = file_path.parent
+        if parent and parent.exists() and not any(parent.iterdir()):
+            parent.rmdir()
+        return True
+    except Exception:
+        return False
