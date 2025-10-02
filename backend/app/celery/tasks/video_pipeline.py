@@ -1,7 +1,7 @@
 from uuid import UUID
 from celery import shared_task
-from app.services import transcripts, analysis, storage, events, crawl
-from app.services.gemini_thumbnail import generate_thumbnail, GeminiQuotaError
+from app.services import transcripts, analysis, events, crawl
+from backend.app.services.image_generation import generate_thumbnail
 from app.celery import celery_app
 from app.database.database import sessionLocal
 from app.models.jobs import Job, JobStatus
@@ -40,7 +40,7 @@ def process_video_pipeline(self, job_id: str):
         keywords = analysis_result.get("image_search_keywords",[])
         step("analysis", {"summary": summary[:140],"keywords":keywords})
 
-        image_paths = []
+        image_urls = []
         image_records = []
         for keyword in keywords:
             images = crawl.crawl_images(keyword, limit=1)
@@ -48,26 +48,20 @@ def process_video_pipeline(self, job_id: str):
                 image_data = images[0]
                 image_url = image_data.get("imageUrl")
                 if image_url:
-                    try:
-                        local_path = storage.download_and_save_image(image_url, str(job_uuid), keyword)
-                        image_paths.append({"keyword": keyword, "path": local_path, "url": image_url})
-                        
-                        # Prepare image record for batch insert
-                        image_records.append({
-                            "keyword": keyword,
-                            "local_path": local_path,
-                            "firecrawl_payload": image_data
-                        })
-                    except Exception as e:
-                        print(f"Failed to download image for keyword '{keyword}': {e}")
-                        continue
+                    image_urls.append({"keyword": keyword, "url": image_url})
+                    
+                    image_records.append({
+                        "keyword": keyword,
+                        "url": image_url,
+                        "firecrawl_payload": image_data
+                    })
             else:
                 print(f"No images found for keyword: {keyword}")
         
-        step("images", {"count": len(image_paths), "paths": [p["path"] for p in image_paths]})
+        step("images", {"count": len(image_urls), "urls": [p["url"] for p in image_urls]})
 
         thumbnail_url = None
-        if len(image_paths) >= 1:
+        if len(image_urls) >= 1:
             thumbnail_prompt = thumbnail_generation_prompt(
                 video_title=meta.title,
                 summary=summary,
@@ -77,11 +71,15 @@ def process_video_pipeline(self, job_id: str):
                 thumbnail_url = generate_thumbnail(
                     job_id=str(job_uuid),
                     prompt=thumbnail_prompt,
-                    reference_image_paths=[p["path"] for p in image_paths[:3]]
+                    reference_image_urls=[p["url"] for p in image_urls[:3]]
                 )
                 step("thumbnail", {"url": thumbnail_url})
-            except GeminiQuotaError as e:
-                events.record_event(job_id, step="thumbnail", status="skipped", payload={"reason": "quota_exceeded", "retry_after": getattr(e, "retry_after", None)})
+            except ValueError as e:
+                print(f"Skipping thumbnail generation: {e}")
+                step("thumbnail", {"status": "skipped", "reason": str(e)})
+            except Exception as e:
+                print(f"Thumbnail generation failed: {e}")
+                step("thumbnail", {"status": "failed", "reason": str(e)})
 
         with sessionLocal() as session:
             job = session.get(Job, job_uuid)
@@ -101,14 +99,14 @@ def process_video_pipeline(self, job_id: str):
                         profile_id=job.user_id,
                         keywords=[img_data["keyword"]],
                         firecrawl_payload=img_data["firecrawl_payload"],
-                        storage_public_url=img_data["local_path"]
+                        storage_public_url=img_data["url"]
                     )
                     session.add(image_record)
                 
                 job.status = JobStatus.completed
                 session.commit()
 
-        events.record_event(job_id, step="done", status="completed", payload={"images_count": len(image_paths)})
+        events.record_event(job_id, step="done", status="completed", payload={"images_count": len(image_urls)})
 
 
     except Exception as exc:
