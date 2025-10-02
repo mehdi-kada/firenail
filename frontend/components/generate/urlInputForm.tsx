@@ -8,11 +8,13 @@ import api from '@/lib/axios/axios'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-type UrlInputFormProps = React.ComponentPropsWithoutRef<'form'>
+type UrlInputFormProps = React.ComponentPropsWithoutRef<'form'> & {
+  onTaskCreated?: (id: string) => void
+}
 
 const TASKS_ENDPOINT = '/api/tasks/'
 
-export function UrlInputForm({ className, ...props }: UrlInputFormProps) {
+export function UrlInputForm({ className, onTaskCreated, ...props }: UrlInputFormProps) {
   const [url, setUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
@@ -60,6 +62,7 @@ export function UrlInputForm({ className, ...props }: UrlInputFormProps) {
       setTaskId(data.task_id)
       setTaskStatus(data.status)
       setStatus('Task created successfully! Job is now being processed.')
+      onTaskCreated?.(data.task_id)
       setUrl('')
     } catch (err: unknown) {
       if (isAxiosError(err)) {

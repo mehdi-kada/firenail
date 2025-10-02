@@ -1,13 +1,13 @@
 from uuid import UUID
 from celery import shared_task
 from app.services import transcripts, analysis, storage, events, crawl
-from app.services.gemini_thumbnail import generate_thumbnail
+from app.services.gemini_thumbnail import generate_thumbnail, GeminiQuotaError
 from app.celery import celery_app
 from app.database.database import sessionLocal
 from app.models.jobs import Job, JobStatus
 from app.models.videos import Video
 from app.models.images import Image
-from app.constants.prompts import analysis_prompt
+from app.constants.prompts import analysis_prompt, thumbnail_generation_prompt
 
 @shared_task(bind=True, name="process_video_pipeline", max_retries=3, default_retry_delay=60)
 def process_video_pipeline(self, job_id: str):
@@ -67,14 +67,21 @@ def process_video_pipeline(self, job_id: str):
         step("images", {"count": len(image_paths), "paths": [p["path"] for p in image_paths]})
 
         thumbnail_url = None
-        if len(image_paths) >= 3:
-            thumbnail_prompt = f"Create a YouTube thumbnail for: {meta.title}. Summary: {summary}"
-            thumbnail_url = generate_thumbnail(
-                job_id=str(job_uuid),
-                prompt=thumbnail_prompt,
-                reference_image_paths=[p["path"] for p in image_paths[:3]]
+        if len(image_paths) >= 1:
+            thumbnail_prompt = thumbnail_generation_prompt(
+                video_title=meta.title,
+                summary=summary,
+                keywords=keywords
             )
-            step("thumbnail", {"url": thumbnail_url})
+            try:
+                thumbnail_url = generate_thumbnail(
+                    job_id=str(job_uuid),
+                    prompt=thumbnail_prompt,
+                    reference_image_paths=[p["path"] for p in image_paths[:3]]
+                )
+                step("thumbnail", {"url": thumbnail_url})
+            except GeminiQuotaError as e:
+                events.record_event(job_id, step="thumbnail", status="skipped", payload={"reason": "quota_exceeded", "retry_after": getattr(e, "retry_after", None)})
 
         with sessionLocal() as session:
             job = session.get(Job, job_uuid)

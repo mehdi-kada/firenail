@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import List, Optional
 from io import BytesIO
+import re
 
 from google import genai
 from PIL import Image
@@ -11,6 +12,21 @@ from app.services.storage import upload_thumbnail, delete_local_file
 
 load_dotenv()
 
+
+class GeminiQuotaError(Exception):
+    def __init__(self, retry_after: Optional[int] = None, message: str = "Gemini API quota exceeded"):
+        self.retry_after = retry_after
+        super().__init__(message)
+
+
+def _parse_retry_after(msg: str) -> Optional[int]:
+    m = re.search(r"retryDelay['\"]:\s*'(\d+)s'", msg)
+    if m:
+        return int(m.group(1))
+    m = re.search(r"retry in (\d+(?:\.\d+)?)s", msg, re.IGNORECASE)
+    if m:
+        return int(float(m.group(1)))
+    return None
 
 
 def generate_thumbnail(
@@ -36,12 +52,19 @@ def generate_thumbnail(
             raise ValueError(f"Reference image not found: {img_path}")
         reference_images.append(Image.open(img_path))
     
-    contents = [prompt ,reference_images]
+    contents = [prompt] + reference_images[:3]
     
-    response = client.models.generate_content(
-        model="gemini-2.5-flash-image-preview",
-        contents=contents,
-    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-image-preview",
+            contents=contents,
+        )
+    except Exception as e:
+        msg = str(e)
+        if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "quota" in msg.lower():
+            retry_after = _parse_retry_after(msg)
+            raise GeminiQuotaError(retry_after=retry_after)
+        raise
     
     generated_image: Optional[Image.Image] = None
     for part in response.candidates[0].content.parts:
