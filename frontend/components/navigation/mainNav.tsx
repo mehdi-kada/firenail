@@ -41,7 +41,7 @@ export function MainNav() {
 				const initials = identifier
 					.split(/\s+/)
 					.filter(Boolean)
-					.map((part) => part[0]?.toUpperCase())
+					.map((part: string) => part[0]?.toUpperCase())
 					.slice(0, 2)
 					.join("")
 

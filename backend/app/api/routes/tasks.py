@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from pydantic import UUID4, BaseModel, HttpUrl
 
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, status, HTTPException
 
 from app.auth.validate import get_current_user_profile
 from app.database.database import AsyncSessionLocal
@@ -14,6 +14,13 @@ from app.celery.celery_app import celery_app
 from app.services import events
 from app.supabase.supabase_client import supabase_admin
 from app.celery.tasks.video_pipeline import process_video_pipeline
+
+
+def enqueue_video_pipeline(job_id: str):
+    try:
+        process_video_pipeline.apply_async(args=[job_id], ignore_result=True)
+    except Exception as exc:
+        print(f"Error enqueuing job {job_id}: {exc}")
 
 class CreateTaskRequest(BaseModel):
     url: HttpUrl
@@ -29,6 +36,7 @@ router = APIRouter()
 @router.post("/tasks/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(
     request: CreateTaskRequest,
+    background_tasks: BackgroundTasks,
     profile: Profile = Depends(get_current_user_profile),
 ):
     job_id = uuid.uuid4()
@@ -51,18 +59,11 @@ async def create_task(
         print(f"Error creating job {job_id}: {exc}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create job")
 
-    events.record_event(job_id, step="job", status="queued", payload={"video_url": str(request.url)})
-    print(f"Enqueuing job {job_id} for video URL {request.url}")
-    
-    try:
-        process_video_pipeline.delay(job_id=str(job_id))
-    except Exception as exc:
-        print(f"Error enqueuing task: {exc}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Failed to enqueue task. Celery broker may be unavailable."
-        )
-    
+    job_id_str = str(job_id)
+    background_tasks.add_task(events.record_event, job_id_str, "job", "queued", {"video_url": str(request.url)})
+    background_tasks.add_task(enqueue_video_pipeline, job_id_str)
+    print(f"Queued job {job_id} for video URL {request.url}")
+
     return TaskResponse(task_id=job_id, status=JobStatus.queued.value)
 
 

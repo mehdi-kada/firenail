@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react"
 
+import { DotLottieReact } from "@lottiefiles/dotlottie-react"
+
 import { createClient } from "@/lib/supabase/client"
 
 type JobEventPayload = {
   [key: string]: unknown
   url?: string
+  thumbnail_url?: string
 }
 
 type JobEvent = {
@@ -19,14 +22,19 @@ type JobEvent = {
 }
 
 const pipelineSteps: { key: JobEvent["step"]; label: string }[] = [
-  { key: "job", label: "Queue" },
-  { key: "metadata", label: "Metadata" },
-  { key: "transcript", label: "Transcript" },
-  { key: "analysis", label: "Analysis" },
-  { key: "images", label: "Images" },
-  { key: "thumbnail", label: "Thumbnail" },
-  { key: "done", label: "Completed" },
+  { key: "job", label: "Queueing Magic" },
+  { key: "metadata", label: "Exploring Details" },
+  { key: "transcript", label: "Capturing Narrative" },
+  { key: "analysis", label: "Shaping Direction" },
+  { key: "images", label: "Gathering Inspiration" },
+  { key: "thumbnail", label: "Crafting Artwork" },
+  { key: "done", label: "Final Reveal" },
 ]
+
+const stepLabelMap = pipelineSteps.reduce<Record<string, string>>((acc, step) => {
+  acc[step.key] = step.label
+  return acc
+}, {})
 
 const statusTone: Record<string, string> = {
   queued: "bg-secondary-background",
@@ -37,8 +45,17 @@ const statusTone: Record<string, string> = {
   skipped: "bg-yellow-50 text-yellow-700 border-yellow-200",
 }
 
+const statusCopy: Record<string, string> = {
+  queued: "Awaiting Launch",
+  processing: "In Motion",
+  started: "Kicking Off",
+  completed: "Wrapped Up",
+  failed: "Needs Attention",
+  skipped: "Skipped",
+}
+
 function formatStatus(status: string) {
-  return status.replace(/_/g, " ").replace(/\b\w/g, (s) => s.toUpperCase())
+  return statusCopy[status] ?? status.replace(/_/g, " ").replace(/\b\w/g, (s) => s.toUpperCase())
 }
 
 export function JobRealtime({ jobId }: { jobId?: string | null }) {
@@ -58,8 +75,21 @@ export function JobRealtime({ jobId }: { jobId?: string | null }) {
       const latestThumb = [...items]
         .reverse()
         .find((ev) => ev.step === "thumbnail" && typeof ev.payload?.url === "string")
-      const thumbValue = latestThumb?.payload?.url ?? null
-      setThumbnailUrl(typeof thumbValue === "string" ? thumbValue : null)
+
+      let nextThumbnail: string | null = null
+      const thumbValue = latestThumb?.payload?.url
+      if (typeof thumbValue === "string") {
+        nextThumbnail = thumbValue
+      } else {
+        const doneEvent = [...items]
+          .reverse()
+          .find((ev) => ev.step === "done" && typeof ev.payload?.thumbnail_url === "string")
+        if (doneEvent && typeof doneEvent.payload?.thumbnail_url === "string") {
+          nextThumbnail = doneEvent.payload.thumbnail_url
+        }
+      }
+
+      setThumbnailUrl(nextThumbnail)
     }
 
     const loadHistory = async () => {
@@ -109,7 +139,7 @@ export function JobRealtime({ jobId }: { jobId?: string | null }) {
   return (
     <div className="mt-8 space-y-6">
       <div>
-        <h3 className="font-semibold mb-2">Process tracker</h3>
+        <h3 className="font-semibold mb-2">Creative Pipeline</h3>
         <ul className="space-y-2">
           {pipelineSteps.map(({ key, label }) => {
             const ev = statusByStep[key]
@@ -128,12 +158,12 @@ export function JobRealtime({ jobId }: { jobId?: string | null }) {
       </div>
 
       <div>
-        <h3 className="font-semibold mb-2">Live events</h3>
+        <h3 className="font-semibold mb-2">Live Signals</h3>
         <ul className="text-sm space-y-1 max-h-64 overflow-auto border rounded-md p-3">
           {events.map((e) => (
             <li key={e.id} className="flex items-center justify-between gap-2">
               <span className="font-mono text-[11px] text-muted-foreground">{new Date(e.created_at).toLocaleTimeString()}</span>
-              <span className="truncate">{e.step}</span>
+              <span className="truncate">{stepLabelMap[e.step] ?? e.step}</span>
               <span className="text-xs px-2 py-0.5 rounded border bg-secondary-background">{formatStatus(e.status)}</span>
             </li>
           ))}
@@ -141,13 +171,27 @@ export function JobRealtime({ jobId }: { jobId?: string | null }) {
         </ul>
       </div>
 
-      {thumbnailUrl && (
-        <div>
-          <h3 className="font-semibold mb-2">Generated thumbnail</h3>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={thumbnailUrl} alt="Generated thumbnail" className="w-full max-w-xl rounded border" />
+      <div>
+        <h3 className="font-semibold mb-2">Artwork Preview</h3>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-secondary-background p-6">
+          {thumbnailUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumbnailUrl} alt="Generated thumbnail" className="w-full max-w-xl rounded-lg border shadow-sm" />
+          ) : (
+            <div className="flex flex-col items-center gap-4 text-center text-sm text-muted-foreground">
+              <div className="w-48">
+                <DotLottieReact
+                  src="https://lottie.host/a074a33e-b10f-4207-b91d-dcb37be041d8/ojYpLFXehX.lottie"
+                  loop
+                  autoplay
+                />
+              </div>
+              <p className="text-base font-medium text-foreground">Brewing your cinematic thumbnail…</p>
+              <p>This usually takes a moment while we refine the final look.</p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }
