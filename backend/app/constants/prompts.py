@@ -1,5 +1,5 @@
 def analysis_prompt(transcript: str, video_title: str) -> str : 
-    return f"""i am trying to get 3 image searches to feed an image language model alongside summary of youtube video transcript to create a thumbnail for the youtube video, i am gonna give you the transcript and i need a the summary of the transcript plus 3 image search keywords that i can use to get images from an image search api to feed the image model to get the best result ensure that the images relats best to the video transcripts and subjects and title 
+    return f"""i am trying to get 3 image searches to feed an image language model alongside summary of youtube video transcript to create a thumbnail for the youtube video, i am gonna give you the transcript and i need a the summary of the transcript plus 2 image search keywords that i can use to get images from an image search api to feed the image model to get the best result ensure that the images relats best to the video transcripts and subjects and title 
 
 
 Title: {video_title}
@@ -7,7 +7,7 @@ Title: {video_title}
 Transcript: {transcript}
 
 Return ONLY a valid JSON object in this exact format (no markdown, no extra text):
-{{"summary": "summary here", "image_search_keywords": ["keyword1", "keyword2", "keyword3"]}}"""
+{{"summary": "summary here", "image_search_keywords": ["keyword1", "keyword2"]}}"""
 
 
 def thumbnail_generation_prompt(video_title: str, summary: str, keywords: list[str]) -> str:

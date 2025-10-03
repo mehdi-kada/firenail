@@ -27,7 +27,7 @@ def analyze_transcript(prompt: str) -> Dict[str, Any]:
             "Content-Type": "application/json",
         },
         json={
-            "model": "x-ai/grok-4-fast:free",
+            "model": "x-ai/grok-4-fast",
             "messages": [
                 {"role": "user", "content": prompt},
             ],
@@ -37,7 +37,6 @@ def analyze_transcript(prompt: str) -> Dict[str, Any]:
     response.raise_for_status()
     data = response.json()
     
-    # Handle missing keys in response
     try:
         raw = data["choices"][0]["message"]["content"]
     except (KeyError, IndexError) as e:

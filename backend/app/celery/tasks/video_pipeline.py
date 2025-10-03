@@ -1,7 +1,7 @@
 from uuid import UUID
 from celery import shared_task
 from app.services import transcripts, analysis, events, crawl
-from backend.app.services.image_generation import generate_thumbnail
+from app.services.image_generation import generate_thumbnail
 from app.celery import celery_app
 from app.database.database import sessionLocal
 from app.models.jobs import Job, JobStatus
