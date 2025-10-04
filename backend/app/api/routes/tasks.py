@@ -18,9 +18,21 @@ from app.celery.tasks.video_pipeline import process_video_pipeline
 
 def enqueue_video_pipeline(job_id: str):
     try:
-        process_video_pipeline.apply_async(args=[job_id], ignore_result=True)
+        # Add producer-side retry logic for broker connection issues
+        process_video_pipeline.apply_async(
+            args=[job_id],
+            ignore_result=True,
+            retry=True,
+            retry_policy={
+                'max_retries': 3,
+                'interval_start': 0,
+                'interval_step': 0.2,
+                'interval_max': 0.5,
+            }
+        )
     except Exception as exc:
-        print(f"Error enqueuing job {job_id}: {exc}")
+        # This will now catch errors only after retries have failed
+        print(f"CRITICAL: Failed to enqueue job {job_id} after multiple retries: {exc}")
 
 class CreateTaskRequest(BaseModel):
     url: HttpUrl

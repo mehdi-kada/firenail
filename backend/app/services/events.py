@@ -33,8 +33,6 @@ def record_event(job_id: str | UUID, step: str, status: str, payload: dict | Non
 
     data = getattr(response, "data", None)
     if (not data) and getattr(response, "error", None) is None:
-        # When PostgREST is configured upsert=true or similar, an empty data payload may
-        # indicate insert succeeded but id was ignored. Fetch the generated id if present.
         with supabase_admin.client.postgrest.session as session:
             fetch_response = supabase_admin.table("job_events").select("id").eq("job_id", str(job_uuid)).eq("step", step).order("created_at", desc=True).limit(1).execute()
             data = getattr(fetch_response, "data", None)

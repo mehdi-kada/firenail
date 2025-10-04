@@ -2,14 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react"
 
-import { DotLottieReact } from "@lottiefiles/dotlottie-react"
-
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 
-type JobEventPayload = {
-  [key: string]: unknown
-  url?: string
-  thumbnail_url?: string
+type JobRealtimeProps = {
+  jobId?: string
 }
 
 type JobEvent = {
@@ -17,181 +14,176 @@ type JobEvent = {
   job_id: string
   step: string
   status: string
-  payload: JobEventPayload
+  payload: Record<string, unknown>
   created_at: string
 }
 
-const pipelineSteps: { key: JobEvent["step"]; label: string }[] = [
-  { key: "job", label: "Queueing Magic" },
-  { key: "metadata", label: "Exploring Details" },
-  { key: "transcript", label: "Capturing Narrative" },
-  { key: "analysis", label: "Shaping Direction" },
-  { key: "images", label: "Gathering Inspiration" },
-  { key: "thumbnail", label: "Crafting Artwork" },
-  { key: "done", label: "Final Reveal" },
-]
-
-const stepLabelMap = pipelineSteps.reduce<Record<string, string>>((acc, step) => {
-  acc[step.key] = step.label
-  return acc
-}, {})
-
-const statusTone: Record<string, string> = {
-  queued: "bg-secondary-background",
-  processing: "bg-secondary-background",
-  started: "bg-secondary-background",
-  completed: "bg-green-50 text-green-700 border-green-200",
-  failed: "bg-red-50 text-red-700 border-red-200",
-  skipped: "bg-yellow-50 text-yellow-700 border-yellow-200",
-}
-
-const statusCopy: Record<string, string> = {
-  queued: "Awaiting Launch",
-  processing: "In Motion",
-  started: "Kicking Off",
-  completed: "Wrapped Up",
-  failed: "Needs Attention",
-  skipped: "Skipped",
-}
-
-function formatStatus(status: string) {
-  return statusCopy[status] ?? status.replace(/_/g, " ").replace(/\b\w/g, (s) => s.toUpperCase())
-}
-
-export function JobRealtime({ jobId }: { jobId?: string | null }) {
-  const supabase = useMemo(() => createClient(), [])
+export function JobRealtime({ jobId }: JobRealtimeProps) {
   const [events, setEvents] = useState<JobEvent[]>([])
-  const [statusByStep, setStatusByStep] = useState<Record<string, JobEvent>>({})
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!jobId) return
+    const supabase = createClient()
+
+    if (!jobId) {
+      setEvents([])
+      setError(null)
+      setIsLoading(false)
+      return
+    }
 
     let isMounted = true
 
-    const syncMetadata = (items: JobEvent[]) => {
-      if (!isMounted) return
-      setStatusByStep(items.reduce<Record<string, JobEvent>>((acc, ev) => ({ ...acc, [ev.step]: ev }), {}))
-      const latestThumb = [...items]
-        .reverse()
-        .find((ev) => ev.step === "thumbnail" && typeof ev.payload?.url === "string")
-
-      let nextThumbnail: string | null = null
-      const thumbValue = latestThumb?.payload?.url
-      if (typeof thumbValue === "string") {
-        nextThumbnail = thumbValue
-      } else {
-        const doneEvent = [...items]
-          .reverse()
-          .find((ev) => ev.step === "done" && typeof ev.payload?.thumbnail_url === "string")
-        if (doneEvent && typeof doneEvent.payload?.thumbnail_url === "string") {
-          nextThumbnail = doneEvent.payload.thumbnail_url
-        }
-      }
-
-      setThumbnailUrl(nextThumbnail)
-    }
-
-    const loadHistory = async () => {
-      const { data, error } = await supabase
+    const loadEvents = async () => {
+      setIsLoading(true)
+      const { data, error: fetchError } = await supabase
         .from("job_events")
         .select("id, job_id, step, status, payload, created_at")
         .eq("job_id", jobId)
         .order("created_at", { ascending: true })
-        .limit(200)
 
-      if (isMounted && !error && data) {
-        const casted = data as JobEvent[]
-        setEvents(casted)
-        syncMetadata(casted)
+      if (!isMounted) return
+
+      if (fetchError) {
+        setError("Failed to load job updates.")
+      } else if (data) {
+        setEvents(data as JobEvent[])
+        setError(null)
       }
+      setIsLoading(false)
     }
-
-    loadHistory()
 
     const channel = supabase
       .channel(`job-events-${jobId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "job_events", filter: `job_id=eq.${jobId}` },
-        (payload: any) => {
-          const ev = payload.new as JobEvent
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "job_events",
+          filter: `job_id=eq.${jobId}`,
+        },
+        (payload) => {
+          console.log("New job event:", payload)
+          if (!payload.new) return
+          const newEvent = payload.new as JobEvent
           setEvents((prev) => {
-            const next = [...prev, ev]
-            syncMetadata(next)
-            return next
+            if (prev.some((event) => event.id === newEvent.id)) {
+              return prev
+            }
+            return [...prev, newEvent].sort(
+              (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            )
           })
         }
       )
-      .subscribe()
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(`Successfully subscribed to job events for ${jobId}`)
+          loadEvents()
+        }
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Channel error:', err)
+          setError(`Failed to subscribe to updates: ${err.message}`)
+        }
+      })
 
     return () => {
       isMounted = false
       supabase.removeChannel(channel)
-      setEvents([])
-      setStatusByStep({})
-      setThumbnailUrl(null)
     }
-  }, [jobId, supabase])
+  }, [jobId])
 
-  if (!jobId) return null
+  const latestStatus = useMemo(() => {
+    if (!events.length) return null
+    const lastEvent = events[events.length - 1]
+    return `${lastEvent.step} · ${lastEvent.status}`
+  }, [events])
 
   return (
-    <div className="mt-8 space-y-6">
-      <div>
-        <h3 className="font-semibold mb-2">Creative Pipeline</h3>
-        <ul className="space-y-2">
-          {pipelineSteps.map(({ key, label }) => {
-            const ev = statusByStep[key]
-            const stateTone = ev ? statusTone[ev.status] ?? "" : "border-dashed text-muted-foreground"
-            return (
-              <li
-                key={key}
-                className={`flex items-center justify-between rounded-md border px-3 py-2 text-sm border-border bg-secondary-background ${stateTone}`}
-              >
-                <span className="font-medium">{label}</span>
-                <span className="text-xs px-2 py-0.5 rounded border bg-background">{ev ? formatStatus(ev.status) : "Pending"}</span>
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-
-      <div>
-        <h3 className="font-semibold mb-2">Live Signals</h3>
-        <ul className="text-sm space-y-1 max-h-64 overflow-auto border rounded-md p-3">
-          {events.map((e) => (
-            <li key={e.id} className="flex items-center justify-between gap-2">
-              <span className="font-mono text-[11px] text-muted-foreground">{new Date(e.created_at).toLocaleTimeString()}</span>
-              <span className="truncate">{stepLabelMap[e.step] ?? e.step}</span>
-              <span className="text-xs px-2 py-0.5 rounded border bg-secondary-background">{formatStatus(e.status)}</span>
-            </li>
-          ))}
-          {events.length === 0 && <li className="text-muted-foreground">Waiting for events…</li>}
-        </ul>
-      </div>
-
-      <div>
-        <h3 className="font-semibold mb-2">Artwork Preview</h3>
-        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-secondary-background p-6">
-          {thumbnailUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumbnailUrl} alt="Generated thumbnail" className="w-full max-w-xl rounded-lg border shadow-sm" />
-          ) : (
-            <div className="flex flex-col items-center gap-4 text-center text-sm text-muted-foreground">
-              <div className="w-48">
-                <DotLottieReact
-                  src="https://lottie.host/a074a33e-b10f-4207-b91d-dcb37be041d8/ojYpLFXehX.lottie"
-                  loop
-                  autoplay
-                />
-              </div>
-              <p className="text-base font-medium text-foreground">Brewing your cinematic thumbnail…</p>
-              <p>This usually takes a moment while we refine the final look.</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="text-lg">Live Job Updates</CardTitle>
+        <CardDescription>
+          {jobId ? `Tracking job ${jobId}` : "Updates will appear after you submit a video."}
+        </CardDescription>
+        {latestStatus && <p className="text-sm font-medium text-primary">{latestStatus}</p>}
+      </CardHeader>
+      <CardContent>
+        {renderContent({ jobId, events, isLoading, error })}
+      </CardContent>
+    </Card>
   )
 }
+
+type ContentProps = {
+  jobId?: string
+  events: JobEvent[]
+  isLoading: boolean
+  error: string | null
+}
+
+function renderContent({ jobId, events, isLoading, error }: ContentProps) {
+  if (!jobId) {
+    return <p className="text-sm text-muted-foreground">Submit a video URL to see live job updates.</p>
+  }
+
+  if (error) {
+    return <p className="text-sm text-destructive">{error}</p>
+  }
+
+  if (isLoading && events.length === 0) {
+    return <p className="text-sm text-muted-foreground">Loading job activity…</p>
+  }
+
+  if (!events.length) {
+    return <p className="text-sm text-muted-foreground">Waiting for the job to start processing…</p>
+  }
+
+  return (
+    <ul className="space-y-3">
+      {events.map((event) => (
+        <li key={event.id} className="rounded-lg border border-border bg-secondary-background p-3">
+          <div className="flex items-center justify-between text-sm font-semibold">
+            <span className="capitalize">{event.step}</span>
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              {formatStatus(event.status)}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">{formatTimestamp(event.created_at)}</p>
+          {Object.keys(event.payload ?? {}).length > 0 && (
+            <pre className="mt-2 whitespace-pre-wrap break-words rounded-md bg-background p-2 text-xs text-muted-foreground">
+              {formatPayload(event.payload)}
+            </pre>
+          )}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function formatPayload(payload: Record<string, unknown>) {
+  try {
+    return JSON.stringify(payload, null, 2)
+  } catch (err) {
+    return String(payload)
+  }
+}
+
+function formatTimestamp(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+  return date.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+}
+
+function formatStatus(status: string) {
+  return status.replace(/_/g, " ")
+}
+

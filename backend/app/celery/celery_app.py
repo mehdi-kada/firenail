@@ -19,4 +19,7 @@ celery_app.conf.update(
     broker_connection_retry_on_startup=True,
     broker_connection_timeout=3,
     broker_connection_max_retries=3,
+    # Ensure tasks are not run eagerly in the same process, forcing them to the queue.
+    task_always_eager=False,
+    task_eager_propagates=False,
 )

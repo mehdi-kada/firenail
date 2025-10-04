@@ -1,7 +1,5 @@
+
 from uuid import UUID
-
-from celery import shared_task
-
 from app.services import transcripts, analysis, events, crawl
 from app.services.image_generation import generate_thumbnail
 from app.celery.celery_app import celery_app
@@ -30,13 +28,10 @@ def process_video_pipeline(self, job_id: str):
     emit("job", "processing", {"video_url": video_url})
 
     try:
-        emit("metadata", "started")
         meta = transcripts.fetch_metadata(video_url)
         emit("metadata", "completed", {"title": meta.title})
 
-        emit("transcript", "started")
         transcript_text = transcripts.fetch_transcript(meta.video_id)
-        emit("transcript", "completed", {"chars": len(transcript_text)})
         
         prompt = analysis_prompt(transcript_text, meta.title)
 
@@ -63,7 +58,7 @@ def process_video_pipeline(self, job_id: str):
             else:
                 print(f"No images found for keyword: {keyword}")
         
-        emit("images", "completed", {"count": len(image_urls), "urls": [p["url"] for p in image_urls]})
+
 
         thumbnail_url = None
         if len(image_urls) >= 1:
@@ -74,11 +69,11 @@ def process_video_pipeline(self, job_id: str):
             )
             try:
                 emit("thumbnail", "started")
-                thumbnail_url = generate_thumbnail(
-                    job_id=str(job_uuid),
-                    prompt=thumbnail_prompt,
-                    reference_image_urls=[p["url"] for p in image_urls[:3]]
-                )
+                # thumbnail_url = generate_thumbnail(
+                #     job_id=str(job_uuid),
+                #     prompt=thumbnail_prompt,
+                #     reference_image_urls=[p["url"] for p in image_urls[:3]]
+                # )
                 emit("thumbnail", "completed", {"url": thumbnail_url})
             except ValueError as e:
                 print(f"Skipping thumbnail generation: {e}")
@@ -122,12 +117,10 @@ def process_video_pipeline(self, job_id: str):
                 job.status = JobStatus.completed
                 session.commit()
 
-        emit("job", "completed")
         emit("done", "completed", {"images_count": len(image_urls), "thumbnail_url": thumbnail_url})
 
 
     except Exception as exc:
-        emit("job", "failed")
         emit("error", "failed", {"message": str(exc)})
         with sessionLocal() as session:
             job = session.get(Job, job_uuid)
