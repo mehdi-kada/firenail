@@ -1,6 +1,6 @@
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy.pool import NullPool
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncEngine
+from sqlalchemy.pool import AsyncAdaptedQueuePool
 from sqlalchemy import create_engine
 from uuid import uuid4
 import os
@@ -14,7 +14,12 @@ SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL", "sqlite:///./test.db")
 # Async engine for FastAPI routes
 async_engine = create_async_engine(
     DATABASE_URL,
-    poolclass=NullPool,
+    poolclass=AsyncAdaptedQueuePool,
+    pool_size=10,
+    max_overflow=20,
+    pool_timeout=30,
+    pool_recycle=3600,
+    pool_pre_ping=True,
     connect_args={
         "statement_cache_size": 0,
         "prepared_statement_cache_size": 0,

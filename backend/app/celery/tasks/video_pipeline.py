@@ -69,11 +69,11 @@ def process_video_pipeline(self, job_id: str):
             )
             try:
                 emit("thumbnail", "started")
-                # thumbnail_url = generate_thumbnail(
-                #     job_id=str(job_uuid),
-                #     prompt=thumbnail_prompt,
-                #     reference_image_urls=[p["url"] for p in image_urls[:3]]
-                # )
+                thumbnail_url = generate_thumbnail(
+                    job_id=str(job_uuid),
+                    prompt=thumbnail_prompt,
+                    reference_image_urls=[p["url"] for p in image_urls[:3]]
+                )
                 emit("thumbnail", "completed", {"url": thumbnail_url})
             except ValueError as e:
                 print(f"Skipping thumbnail generation: {e}")
@@ -118,7 +118,7 @@ def process_video_pipeline(self, job_id: str):
                 session.commit()
 
         emit("done", "completed", {"images_count": len(image_urls), "thumbnail_url": thumbnail_url})
-
+        return {"status": "success"}
 
     except Exception as exc:
         emit("error", "failed", {"message": str(exc)})

@@ -1,18 +1,16 @@
-import os
+import asyncio
 import uuid
 from datetime import UTC, datetime
 
 from pydantic import UUID4, BaseModel, HttpUrl
 
-from fastapi import APIRouter, BackgroundTasks, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException
 
 from app.auth.validate import get_current_user_profile
 from app.database.database import AsyncSessionLocal
 from app.models.jobs import Job, JobStatus
 from app.models.profiles import Profile
-from app.celery.celery_app import celery_app
 from app.services import events
-from app.supabase.supabase_client import supabase_admin
 from app.celery.tasks.video_pipeline import process_video_pipeline
 
 
@@ -45,35 +43,62 @@ class TaskResponse(BaseModel):
 router = APIRouter()
 
 
+async def _run_background(job_id: str, video_url: str):
+    loop = asyncio.get_running_loop()
+
+    def record():
+        try:
+            events.record_event(job_id, "job", "queued", {"video_url": video_url})
+        except Exception as exc:
+            print(f"Error recording queued event for job {job_id}: {exc}")
+
+    def enqueue():
+        try:
+            enqueue_video_pipeline(job_id)
+        except Exception as exc:
+            print(f"Error enqueuing pipeline for job {job_id}: {exc}")
+
+    try:
+        await asyncio.gather(
+            loop.run_in_executor(None, record),
+            loop.run_in_executor(None, enqueue),
+        )
+    except Exception as exc:
+        print(f"Unexpected error in background task for job {job_id}: {exc}")
+
+
 @router.post("/tasks/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(
     request: CreateTaskRequest,
-    background_tasks: BackgroundTasks,
     profile: Profile = Depends(get_current_user_profile),
 ):
     job_id = uuid.uuid4()
-    job_data = {
-        "id": str(job_id),
-        "user_id": str(profile.id),
-        "video_url": str(request.url),
-        "status": JobStatus.queued.value,
-        "created_at": datetime.now(UTC).isoformat(),
-        "updated_at": datetime.now(UTC).isoformat(),
-    }
+    async with AsyncSessionLocal() as session:
+        job = Job(
+            id=job_id,
+            user_id=profile.id,
+            video_url=str(request.url),
+            status=JobStatus.queued,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
 
-    try:
-        response = supabase_admin.table("jobs").insert(job_data).execute()
-        if getattr(response, "error", None):
-            raise RuntimeError(response.error)
-        if not getattr(response, "data", None):
-            raise RuntimeError("Empty response from Supabase when creating job")
-    except Exception as exc:
-        print(f"Error creating job {job_id}: {exc}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create job")
+        session.add(job)
+
+        try:
+            await session.commit()
+        except Exception as exc:
+            await session.rollback()
+            print(f"Error creating job {job_id}: {exc}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create job")
 
     job_id_str = str(job_id)
-    background_tasks.add_task(events.record_event, job_id_str, "job", "queued", {"video_url": str(request.url)})
-    background_tasks.add_task(enqueue_video_pipeline, job_id_str)
+    
+    # Create background task with proper exception handling
+    task = asyncio.create_task(_run_background(job_id_str, str(request.url)))
+    # Add done callback to log any unhandled exceptions
+    task.add_done_callback(lambda t: t.exception() if not t.cancelled() else None)
+    
     print(f"Queued job {job_id} for video URL {request.url}")
 
     return TaskResponse(task_id=job_id, status=JobStatus.queued.value)
