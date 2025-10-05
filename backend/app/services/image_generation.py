@@ -96,8 +96,16 @@ def generate_thumbnail(
         poll_result = poll_response.json()
         status = poll_result.get("data", {}).get("status")
         
+        print(f"Polling attempt {attempt + 1}/{max_attempts} - Status: {status}")
+        
         if status == "COMPLETED":
+            print(f"Full completed response: {poll_result}")
             generated = poll_result.get("data", {}).get("generated", [])
+            error_field = poll_result.get("data", {}).get("error")
+            
+            if error_field:
+                raise RuntimeError(f"Freepik API returned error in completed task: {error_field}")
+            
             if generated and len(generated) > 0:
                 image_url = generated[0] if isinstance(generated[0], str) else generated[0].get("url")
                 if not image_url:
@@ -109,10 +117,11 @@ def generate_thumbnail(
                 thumbnail_url = upload_thumbnail(job_id, image_response.content)
                 return thumbnail_url
             else:
-                raise RuntimeError("No generated images in completed task")
+                raise RuntimeError(f"No generated images in completed task. Full response: {poll_result}")
         
         elif status == "FAILED":
             error_msg = poll_result.get("data", {}).get("error", "Unknown error")
+            print(f"Full failed response: {poll_result}")
             raise RuntimeError(f"Freepik image generation failed: {error_msg}")
         
         time.sleep(poll_interval)

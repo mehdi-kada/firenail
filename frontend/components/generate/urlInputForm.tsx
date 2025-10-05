@@ -17,9 +17,6 @@ const TASKS_ENDPOINT = '/api/tasks/'
 export function UrlInputForm({ className, onTaskCreated, ...props }: UrlInputFormProps) {
   const [url, setUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [status, setStatus] = useState<string | null>(null)
-  const [taskId, setTaskId] = useState<string | null>(null)
-  const [taskStatus, setTaskStatus] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const validateUrl = (value: string) => {
@@ -44,7 +41,6 @@ export function UrlInputForm({ className, onTaskCreated, ...props }: UrlInputFor
     const validationError = validateUrl(url)
     if (validationError) {
       setError(validationError)
-      setStatus(null)
       return
     }
 
@@ -52,16 +48,10 @@ export function UrlInputForm({ className, onTaskCreated, ...props }: UrlInputFor
 
     setIsSubmitting(true)
     setError(null)
-    setStatus(null)
-    setTaskId(null)
-    setTaskStatus(null)
 
     try {
       const response = await api.post(TASKS_ENDPOINT, { url: normalizedUrl })
       const data = response.data
-      setTaskId(data.task_id)
-      setTaskStatus(data.status)
-      setStatus('Task created successfully! Job is now being processed.')
       onTaskCreated?.(data.task_id)
       setUrl('')
     } catch (err: unknown) {
@@ -99,14 +89,6 @@ export function UrlInputForm({ className, onTaskCreated, ...props }: UrlInputFor
         </Button>
       </div>
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-      {status && <p className="mt-2 text-sm text-green-600">{status}</p>}
-      {taskId && (
-        <div className="mt-4 p-4 bg-secondary-background rounded-lg border border-border">
-          <h3 className="font-semibold mb-2">Task Details</h3>
-          <p className="text-sm"><strong>Task ID:</strong> {taskId}</p>
-          <p className="text-sm"><strong>Status:</strong> {taskStatus}</p>
-        </div>
-      )}
     </form>
   )
 }

@@ -2,7 +2,7 @@
 import api from "@/lib/axios/axios";
 import { useEffect } from "react";
 
-export default function DashboardPage() {
+export default function ThumbnailsPage() {
   useEffect( () => {
     const fetchData = async () => {
       try {
@@ -18,8 +18,8 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p>Welcome to your dashboard!</p>
+      <h1 className="text-2xl font-bold">Thumbnails</h1>
+      <p>Welcome to your thumbnails!</p>
     </div>
   );
 }

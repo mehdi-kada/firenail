@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState, useMemo } from "react"
+import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { createClient } from "@/lib/supabase/client"
+import { CheckCircle2, Loader2 } from "lucide-react"
 
 type JobRealtimeProps = {
   jobId?: string
@@ -95,95 +95,143 @@ export function JobRealtime({ jobId }: JobRealtimeProps) {
     }
   }, [jobId])
 
-  const latestStatus = useMemo(() => {
-    if (!events.length) return null
-    const lastEvent = events[events.length - 1]
-    return `${lastEvent.step} · ${lastEvent.status}`
+  const videoTitle = useMemo(() => {
+    const metadataEvent = events.find((e) => e.step === "metadata" && e.status === "completed")
+    return metadataEvent?.payload?.title as string | undefined
   }, [events])
 
-  return (
-    <Card className="mt-6">
-      <CardHeader>
-        <CardTitle className="text-lg">Live Job Updates</CardTitle>
-        <CardDescription>
-          {jobId ? `Tracking job ${jobId}` : "Updates will appear after you submit a video."}
-        </CardDescription>
-        {latestStatus && <p className="text-sm font-medium text-primary">{latestStatus}</p>}
-      </CardHeader>
-      <CardContent>
-        {renderContent({ jobId, events, isLoading, error })}
-      </CardContent>
-    </Card>
-  )
-}
+  const summary = useMemo(() => {
+    const analysisEvent = events.find((e) => e.step === "analysis" && e.status === "completed")
+    return analysisEvent?.payload?.summary as string | undefined
+  }, [events])
 
-type ContentProps = {
-  jobId?: string
-  events: JobEvent[]
-  isLoading: boolean
-  error: string | null
-}
+  const thumbnailUrl = useMemo(() => {
+    const thumbnailEvent = events.find((e) => e.step === "thumbnail" && e.status === "completed")
+    return thumbnailEvent?.payload?.url as string | undefined
+  }, [events])
 
-function renderContent({ jobId, events, isLoading, error }: ContentProps) {
+  const isCompleted = useMemo(() => {
+    return events.some((e) => e.step === "done" && e.status === "completed")
+  }, [events])
+
+  const currentStep = useMemo(() => {
+    if (!events.length) return null
+    const lastEvent = events[events.length - 1]
+    return formatStepName(lastEvent.step)
+  }, [events])
+
   if (!jobId) {
-    return <p className="text-sm text-muted-foreground">Submit a video URL to see live job updates.</p>
+    return null
   }
 
   if (error) {
-    return <p className="text-sm text-destructive">{error}</p>
+    return (
+      <div className="mt-8 text-center">
+        <p className="text-sm text-destructive">{error}</p>
+      </div>
+    )
   }
 
   if (isLoading && events.length === 0) {
-    return <p className="text-sm text-muted-foreground">Loading job activity…</p>
-  }
-
-  if (!events.length) {
-    return <p className="text-sm text-muted-foreground">Waiting for the job to start processing…</p>
+    return (
+      <div className="mt-8 text-center">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+        <p className="mt-4 text-sm text-muted-foreground">Connecting...</p>
+      </div>
+    )
   }
 
   return (
-    <ul className="space-y-3">
-      {events.map((event) => (
-        <li key={event.id} className="rounded-lg border border-border bg-secondary-background p-3">
-          <div className="flex items-center justify-between text-sm font-semibold">
-            <span className="capitalize">{event.step}</span>
-            <span className="text-xs uppercase tracking-wide text-muted-foreground">
-              {formatStatus(event.status)}
-            </span>
+    <div className="mt-8 space-y-6">
+      {/* Video Title - appears first when metadata is ready */}
+      {videoTitle && (
+        <div className="text-center space-y-2 animate-in fade-in duration-500">
+          <h2 className="text-2xl font-bold text-foreground">{videoTitle}</h2>
+        </div>
+      )}
+
+      {/* Summary - appears after analysis */}
+      {summary && (
+        <div className="max-w-2xl mx-auto animate-in fade-in duration-500">
+          <p className="text-center text-muted-foreground leading-relaxed">{summary}</p>
+        </div>
+      )}
+
+      {/* Lottie Animation or Generated Image */}
+      <div className="flex items-center justify-center">
+        {thumbnailUrl ? (
+          <div className="relative group animate-in fade-in duration-700">
+            <img
+              src={thumbnailUrl}
+              alt="Generated Thumbnail"
+              className="max-w-2xl w-full h-auto rounded-2xl shadow-2xl border border-border"
+            />
+            <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Completed
+            </div>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{formatTimestamp(event.created_at)}</p>
-          {Object.keys(event.payload ?? {}).length > 0 && (
-            <pre className="mt-2 whitespace-pre-wrap break-words rounded-md bg-background p-2 text-xs text-muted-foreground">
-              {formatPayload(event.payload)}
-            </pre>
-          )}
-        </li>
-      ))}
-    </ul>
+        ) : (
+          <div className="w-full max-w-md">
+            <DotLottieReact
+              src="https://lottie.host/7b402db5-8d25-42cd-93ef-f65004e61382/66dwbIRr0p.lottie"
+              loop
+              autoplay
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Status Indicator */}
+      {!isCompleted && currentStep && (
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground animate-pulse">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>{currentStep}</span>
+        </div>
+      )}
+
+      {/* Minimal Event Timeline */}
+      {events.length > 0 && (
+        <div className="max-w-xl mx-auto">
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            {events
+              .filter((e) => ["metadata", "analysis", "thumbnail", "done"].includes(e.step))
+              .map((event) => (
+                <div
+                  key={event.id}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    event.status === "completed"
+                      ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                      : event.status === "started" || event.status === "processing"
+                      ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                      : event.status === "failed"
+                      ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {event.status === "completed" && <CheckCircle2 className="h-3 w-3" />}
+                  {(event.status === "started" || event.status === "processing") && (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  )}
+                  <span>{formatStepName(event.step)}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
-function formatPayload(payload: Record<string, unknown>) {
-  try {
-    return JSON.stringify(payload, null, 2)
-  } catch (err) {
-    return String(payload)
+function formatStepName(step: string): string {
+  const stepNames: Record<string, string> = {
+    job: "Queued",
+    metadata: "Fetching Video Info",
+    analysis: "Analyzing Content",
+    thumbnail: "Generating Thumbnail",
+    done: "Complete",
+    error: "Error"
   }
-}
-
-function formatTimestamp(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-  return date.toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  })
-}
-
-function formatStatus(status: string) {
-  return status.replace(/_/g, " ")
+  return stepNames[step] || step.charAt(0).toUpperCase() + step.slice(1)
 }
 

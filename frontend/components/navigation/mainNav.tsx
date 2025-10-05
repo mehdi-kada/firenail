@@ -16,7 +16,7 @@ type NavLink = {
 }
 
 const navLinks: NavLink[] = [
-	{ href: "/dashboard", label: "Dashboard" },
+	{ href: "/thumbnails", label: "Thumbnails" },
 	{ href: "/generate", label: "Generate" },
 ]
 
@@ -82,9 +82,9 @@ export function MainNav() {
 		<header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 			<div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
 				<Link
-					href="/dashboard"
+					href="/thumbnails"
 					className="flex items-center gap-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
-					aria-label="ThumbnailAI dashboard"
+					aria-label="ThumbnailAI thumbnails"
 				>
 					<Image
 						src="/ChatGPT-Image-Sep-24_-2025_-08_56_24-PM.svg"
