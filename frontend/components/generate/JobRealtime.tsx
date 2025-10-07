@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { DotLottieReact } from "@lottiefiles/dotlottie-react"
 import { createClient } from "@/lib/supabase/client"
-import { CheckCircle2, Loader2 } from "lucide-react"
+import { CheckCircle2, Loader2, Download } from "lucide-react"
 
 type JobRealtimeProps = {
   jobId?: string
@@ -159,6 +159,17 @@ export function JobRealtime({ jobId }: JobRealtimeProps) {
     return Math.min(95, Math.round(value))
   }, [activeStepKey, events.length, isCompleted])
 
+  const handleDownload = () => {
+    if (!thumbnailUrl) return
+    
+    const link = document.createElement('a')
+    link.href = thumbnailUrl
+    link.download = `thumbnail-${Date.now()}.jpg`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   if (!jobId) {
     return null
   }
@@ -181,125 +192,65 @@ export function JobRealtime({ jobId }: JobRealtimeProps) {
   }
 
   return (
-    <section className="mt-10">
-      <div className="relative isolate overflow-hidden rounded-3xl border border-border bg-card/80 px-6 py-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6)] backdrop-blur sm:px-10">
-        <div className="absolute -top-24 right-10 h-48 w-48 rounded-full bg-primary/15 blur-3xl" aria-hidden />
-        <div className="absolute -bottom-32 left-10 h-64 w-64 rounded-full bg-primary/10 blur-3xl" aria-hidden />
-
-        <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-10 text-center">
-          {events.length > 0 ? (
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold text-primary">
+    <section className="mt-8">
+      <div className="w-full max-w-2xl mx-auto">
+        {events.length > 0 && (
+          <div className="mb-6 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 text-sm">
               {isCompleted ? (
-                <CheckCircle2 className="h-3.5 w-3.5" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               ) : (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
               )}
-              <span>{isCompleted ? "Processing complete" : currentStep ?? "Processing"}</span>
-            </div>
-          ) : null}
-
-          {videoTitle && (
-            <div className="space-y-3 animate-in fade-in duration-500">
-              <h2 className="text-3xl font-semibold sm:text-4xl">{videoTitle}</h2>
-              <p className="text-sm text-muted-foreground sm:text-base">
-                We're preparing your assets in real time. Sit tight while we keep everything in sync.
-              </p>
-            </div>
-          )}
-
-          {summary && (
-            <div className="w-full max-w-2xl animate-in slide-in-from-bottom-2 duration-500">
-              <blockquote className="rounded-2xl border border-border/70 bg-background/40 px-6 py-5 text-left text-sm leading-relaxed text-muted-foreground shadow-inner sm:text-base">
-                {summary}
-              </blockquote>
-            </div>
-          )}
-
-          <div className="w-full max-w-3xl animate-in fade-in duration-700">
-            <div className="group relative overflow-hidden rounded-3xl border border-border/70 bg-background/60 p-3 shadow-lg">
-              {thumbnailUrl ? (
-                <div className="relative overflow-hidden rounded-2xl">
-                  <img
-                    src={thumbnailUrl}
-                    alt="Generated Thumbnail"
-                    className="h-auto w-full rounded-2xl object-cover shadow-2xl transition-transform duration-700 group-hover:scale-[1.02]"
-                  />
-                  <div className="absolute top-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-emerald-50 shadow-md">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Completed
-                  </div>
-                </div>
-              ) : (
-                <div className="mx-auto w-full max-w-md">
-                  <DotLottieReact
-                    src="https://lottie.host/7b402db5-8d25-42cd-93ef-f65004e61382/66dwbIRr0p.lottie"
-                    loop
-                    autoplay
-                  />
-                </div>
-              )}
+              <span className="font-medium">
+                {isCompleted ? "Complete" : currentStep ?? "Processing"}
+              </span>
             </div>
           </div>
+        )}
 
-          {events.length > 0 ? (
-            <div className="w-full max-w-2xl space-y-4">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Progress</span>
-                <span>{progress}%</span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+        {videoTitle && (
+          <div className="mb-6 text-center animate-in fade-in duration-500">
+            <h2 className="text-xl font-medium mb-2">{videoTitle}</h2>
+            <p className="text-sm text-muted-foreground">
+              Generating your thumbnail...
+            </p>
+          </div>
+        )}
+
+        {summary && (
+          <div className="mb-6 p-4 bg-muted/30 rounded-lg text-sm text-muted-foreground animate-in slide-in-from-bottom-2 duration-500">
+            {summary}...
+          </div>
+        )}
+
+        <div className="relative mb-6 animate-in fade-in duration-700">
+          {thumbnailUrl ? (
+            <div className="relative group">
+              <img
+                src={thumbnailUrl}
+                alt="Generated Thumbnail"
+                className="w-full rounded-xl shadow-md transition-all duration-500 group-hover:shadow-xl"
+              />
+              {isCompleted && (
+                <button
+                  onClick={handleDownload}
+                  className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors duration-200 shadow-lg"
+                >
+                  <Download className="h-4 w-4" />
+                  <span className="text-sm font-medium">Download</span>
+                </button>
+              )}
             </div>
-          ) : null}
-
-          {timelineSteps.some((step) => step.status !== "pending") ? (
-            <div className="grid w-full max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {timelineSteps.map((step, index) => {
-                const isActive = step.status === "started" || step.status === "processing"
-                const isFailed = step.status === "failed"
-                const isComplete = step.status === "completed"
-
-                return (
-                  <div
-                    key={step.step}
-                    className="relative flex flex-col items-center gap-3 rounded-2xl border border-border/70 bg-background/40 p-4 text-center shadow-sm transition-transform hover:-translate-y-1"
-                  >
-                    <div
-                      className={`flex size-10 items-center justify-center rounded-full border text-sm font-semibold ${
-                        isComplete
-                          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
-                          : isFailed
-                          ? "border-destructive/40 bg-destructive/10 text-destructive"
-                          : isActive
-                          ? "border-primary/40 bg-primary/10 text-primary"
-                          : "border-border bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {isComplete ? (
-                        <CheckCircle2 className="h-4 w-4" />
-                      ) : isFailed ? (
-                        <span>!</span>
-                      ) : isActive ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <span className="text-xs">{index + 1}</span>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-foreground">{step.label}</p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {step.status === "pending" ? "Pending" : step.status}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
+          ) : (
+            <div className="flex justify-center py-8">
+              <DotLottieReact
+                src="https://lottie.host/7b402db5-8d25-42cd-93ef-f65004e61382/66dwbIRr0p.lottie"
+                loop
+                autoplay
+              />
             </div>
-          ) : null}
+          )}
         </div>
       </div>
     </section>
