@@ -89,7 +89,6 @@ def process_video_pipeline(self, job_id: str):
                     job_id=job_uuid,
                     youtube_id=meta.video_id,
                     title=meta.title,
-                    transcript=transcript_text,
                     summary=summary
                 )
                 session.add(video_record)
