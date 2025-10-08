@@ -48,6 +48,20 @@ export const useJobState = (events: JobEvent[]) => {
     return events[events.length - 1]?.step ?? null
   }, [events])
 
+  const errorEvent = useMemo(() => {
+    if (!events.length) return null
+    const latest = [...events].reverse()
+    return latest.find((event) => event.step === "error" || event.status === "failed" || event.status === "error") ?? null
+  }, [events])
+
+  const jobError = useMemo(() => {
+    if (!errorEvent) return null
+    const payload = errorEvent.payload ?? {}
+    const message = typeof payload["message"] === "string" ? (payload["message"] as string) : undefined
+    const reason = typeof payload["reason"] === "string" ? (payload["reason"] as string) : undefined
+    return message ?? reason ?? "The job failed unexpectedly."
+  }, [errorEvent])
+
   const timelineSteps = useMemo(() => {
     const ordered = ["metadata", "analysis", "thumbnail", "done"]
     const latestByStep = [...events].reverse()
@@ -68,6 +82,16 @@ export const useJobState = (events: JobEvent[]) => {
     })
   }, [events, isCompleted])
 
-  return { isCompleted, currentStep, videoTitle, summary, thumbnailUrl, activeStepKey, timelineSteps }
+  return {
+    isCompleted,
+    hasError: Boolean(errorEvent),
+    currentStep,
+    videoTitle,
+    summary,
+    thumbnailUrl,
+    activeStepKey,
+    timelineSteps,
+    jobError,
+  }
 
 }
