@@ -14,12 +14,13 @@ from app.models.profiles import Profile
 
 router = APIRouter()
 
-router.get("/", response_model=list[ThumbnailResponse])
+
+@router.get("/", response_model=list[ThumbnailResponse])
 async def list_thumbnails(
     limit: int = 10,
     offset: int = 0,
-    profile : Profile = Depends(get_current_user_profile),
-    db : AsyncSession = Depends(get_db),
+    profile: Profile = Depends(get_current_user_profile),
+    db: AsyncSession = Depends(get_db),
 ) -> list[ThumbnailResponse]:
     """
     List thumbnails for the current user profile.
@@ -37,4 +38,3 @@ async def list_thumbnails(
         )
         for image in images
     ]
-    
