@@ -6,6 +6,8 @@ from app.api.routes import tasks
 
 app = FastAPI()
 
+main_app = app
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
