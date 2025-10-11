@@ -1,12 +1,14 @@
 from datetime import datetime
-from pydantic import BaseModel, HttpUrl
+from typing import Optional
 from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class ThumbnailResponse(BaseModel):
     id: UUID
     job_id: UUID
-    storage_url: HttpUrl
+    storage_url: Optional[str]
     keywords: list[str]
     created_at: datetime
 

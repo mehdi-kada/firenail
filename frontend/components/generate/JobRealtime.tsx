@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { Loader2 } from "lucide-react"
 import { useJobEvents } from "@/hooks/realTime/JobEvents"
 import { useJobState } from "@/hooks/realTime/jobState"
@@ -8,16 +9,40 @@ import Thumbnail from "./thumbnail"
 
 type JobRealtimeProps = {
   jobId?: string
+  onJobComplete?: () => void
+  onJobError?: () => void
 }
 
 
 
-export function JobRealtime({ jobId }: JobRealtimeProps) {
+export function JobRealtime({ jobId, onJobComplete, onJobError }: JobRealtimeProps) {
 
   const { events, isLoading, error } = useJobEvents(jobId)
 
   const { isCompleted, hasError, currentStep, videoTitle, summary, thumbnailUrl, jobError } = useJobState(events)
 
+
+  const completionReportedRef = useRef(false)
+  const errorReportedRef = useRef(false)
+
+  useEffect(() => {
+    completionReportedRef.current = false
+    errorReportedRef.current = false
+  }, [jobId])
+
+  useEffect(() => {
+    if (!jobId) return
+
+    if (hasError && !errorReportedRef.current) {
+      onJobError?.()
+      errorReportedRef.current = true
+    }
+
+    if (isCompleted && !completionReportedRef.current) {
+      onJobComplete?.()
+      completionReportedRef.current = true
+    }
+  }, [hasError, isCompleted, jobId, onJobComplete, onJobError])
  
 
 

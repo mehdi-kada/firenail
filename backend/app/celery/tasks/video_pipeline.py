@@ -38,7 +38,7 @@ def process_video_pipeline(self, job_id: str):
         analysis_result = analysis.analyze_transcript(prompt)
         summary = analysis_result.get("summary","")
         keywords = analysis_result.get("image_search_keywords",[])
-        emit("analysis", "completed", {"summary": summary[:140],"keywords":keywords})
+        emit("analysis", "completed", {"summary": summary[:170],"keywords":keywords})
 
         image_urls = []
         image_records = []

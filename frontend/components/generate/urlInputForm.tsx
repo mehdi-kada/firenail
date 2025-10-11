@@ -10,11 +10,12 @@ import { Button } from '@/components/ui/button'
 
 type UrlInputFormProps = React.ComponentPropsWithoutRef<'form'> & {
   onTaskCreated?: (id: string) => void
+  isGenerating?: boolean
 }
 
 const TASKS_ENDPOINT = '/api/tasks/'
 
-export function UrlInputForm({ className, onTaskCreated, ...props }: UrlInputFormProps) {
+export function UrlInputForm({ className, onTaskCreated, isGenerating = false, ...props }: UrlInputFormProps) {
   const [url, setUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -53,7 +54,6 @@ export function UrlInputForm({ className, onTaskCreated, ...props }: UrlInputFor
       const response = await api.post(TASKS_ENDPOINT, { url: normalizedUrl })
       const data = response.data
       onTaskCreated?.(data.task_id)
-      setUrl('')
     } catch (err: unknown) {
       if (isAxiosError(err)) {
         const message = err.response?.data?.message ?? err.response?.data?.detail
@@ -65,6 +65,8 @@ export function UrlInputForm({ className, onTaskCreated, ...props }: UrlInputFor
       setIsSubmitting(false)
     }
   }
+
+  const isBusy = isSubmitting || isGenerating
 
   return (
     <form onSubmit={handleSubmit} className={cn('', className)} {...props} noValidate>
@@ -82,10 +84,10 @@ export function UrlInputForm({ className, onTaskCreated, ...props }: UrlInputFor
         <Button
           className="absolute inset-y-2 right-1.5 px-8 py-2 bg-primary text-white text-sm font-bold rounded-full hover:bg-opacity-90 transition-all"
           type="submit"
-          disabled={isSubmitting}
-          aria-busy={isSubmitting}
+          disabled={isBusy}
+          aria-busy={isBusy}
         >
-          {isSubmitting ? 'Submitting…' : 'Generate'}
+          {isBusy ? 'Generating...' : 'Generate'}
         </Button>
       </div>
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}

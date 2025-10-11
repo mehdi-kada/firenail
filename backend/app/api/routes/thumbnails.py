@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.thumbnail_schema import ThumbnailResponse
-from backend.app.auth.validate import get_current_user_profile
+from app.auth.validate import get_current_user_profile
 from app.database.database import get_db
-from backend.app.models.images import Image
+from app.models.images import Image
 from app.models.profiles import Profile
 
 
@@ -28,12 +28,14 @@ async def list_thumbnails(
     q = select(Image).where(Image.profile_id == profile.id).limit(limit).offset(offset)
     result = await db.execute(q)
     images = result.scalars().all()
+    if not images:
+        return []
     return [
         ThumbnailResponse(
             id=image.id,
             job_id=image.job_id,
             storage_url=image.storage_public_url,
-            keywords=image.keywords,
+            keywords=image.keywords or [],
             created_at=image.created_at,
         )
         for image in images

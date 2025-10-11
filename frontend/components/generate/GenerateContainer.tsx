@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client"
 
 export function GenerateContainer() {
   const [jobId, setJobId] = useState<string | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
 
   useEffect(() => {
     const checkSession = async () => {
@@ -23,8 +24,18 @@ export function GenerateContainer() {
 
   return (
     <>
-      <UrlInputForm onTaskCreated={(id) => setJobId(id)} />
-      <JobRealtime jobId={jobId ?? undefined} />
+      <UrlInputForm
+        onTaskCreated={(id) => {
+          setJobId(id)
+          setIsGenerating(true)
+        }}
+        isGenerating={isGenerating}
+      />
+      <JobRealtime
+        jobId={jobId ?? undefined}
+        onJobComplete={() => setIsGenerating(false)}
+        onJobError={() => setIsGenerating(false)}
+      />
     </>
   )
 }

@@ -19,7 +19,6 @@ class Video(Base):
     job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False)
     youtube_id: Mapped[str] = mapped_column(String, nullable=False)
     title: Mapped[str] = mapped_column(String, nullable=False)
-    transcript: Mapped[str] = mapped_column(Text, nullable=False)
     summary: Mapped[Optional[str]] = mapped_column(Text)
 
     job: Mapped["Job"] = relationship("Job", back_populates="videos")
