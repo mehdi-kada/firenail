@@ -18,7 +18,7 @@ type NavLink = {
 const navLinks: NavLink[] = [
 	{ href: "/thumbnails", label: "Thumbnails" },
 	{ href: "/generate", label: "Generate" },
-	{ href: "/upgrade", label: "Upgrade" },
+	{ href: "/pricing", label: "Upgrade" },
 ]
 
 export function MainNav() {

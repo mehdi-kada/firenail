@@ -17,7 +17,6 @@ RUN pip install uv
 RUN uv venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN uv pip install --system -e .
-
 # Copy application code
 COPY . .
 
