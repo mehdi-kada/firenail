@@ -1,5 +1,4 @@
-import { UrlInputForm } from "@/components/generate/urlInputForm";
-
+import { GenerateContainer } from "@/components/generate/GenerateContainer";
 
 export default function GeneratePage() {
   return (
@@ -9,7 +8,7 @@ export default function GeneratePage() {
         <p className="mt-4 text-lg text-text/80">Paste a YouTube URL below to get a summary and a generated image based on the video's transcript.</p>
       </div>
       <div className="mt-12 max-w-2xl mx-auto">
-        <UrlInputForm />
+        <GenerateContainer />
       </div>
     </main>
   )

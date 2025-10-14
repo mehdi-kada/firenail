@@ -8,14 +8,16 @@ import api from '@/lib/axios/axios'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-type UrlInputFormProps = React.ComponentPropsWithoutRef<'form'>
+type UrlInputFormProps = React.ComponentPropsWithoutRef<'form'> & {
+  onTaskCreated?: (id: string) => void
+  isGenerating?: boolean
+}
 
-const GENERATE_ENDPOINT = '/generate'
+const TASKS_ENDPOINT = '/api/tasks/'
 
-export function UrlInputForm({ className, ...props }: UrlInputFormProps) {
+export function UrlInputForm({ className, onTaskCreated, isGenerating = false, ...props }: UrlInputFormProps) {
   const [url, setUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [status, setStatus] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const validateUrl = (value: string) => {
@@ -40,7 +42,6 @@ export function UrlInputForm({ className, ...props }: UrlInputFormProps) {
     const validationError = validateUrl(url)
     if (validationError) {
       setError(validationError)
-      setStatus(null)
       return
     }
 
@@ -48,12 +49,11 @@ export function UrlInputForm({ className, ...props }: UrlInputFormProps) {
 
     setIsSubmitting(true)
     setError(null)
-    setStatus(null)
 
     try {
-      await api.post(GENERATE_ENDPOINT, { url: normalizedUrl })
-      setStatus('Your link was sent. We\'ll start generating in the background.')
-      setUrl('')
+      const response = await api.post(TASKS_ENDPOINT, { url: normalizedUrl })
+      const data = response.data
+      onTaskCreated?.(data.task_id)
     } catch (err: unknown) {
       if (isAxiosError(err)) {
         const message = err.response?.data?.message ?? err.response?.data?.detail
@@ -65,6 +65,8 @@ export function UrlInputForm({ className, ...props }: UrlInputFormProps) {
       setIsSubmitting(false)
     }
   }
+
+  const isBusy = isSubmitting || isGenerating
 
   return (
     <form onSubmit={handleSubmit} className={cn('', className)} {...props} noValidate>
@@ -82,14 +84,13 @@ export function UrlInputForm({ className, ...props }: UrlInputFormProps) {
         <Button
           className="absolute inset-y-2 right-1.5 px-8 py-2 bg-primary text-white text-sm font-bold rounded-full hover:bg-opacity-90 transition-all"
           type="submit"
-          disabled={isSubmitting}
-          aria-busy={isSubmitting}
+          disabled={isBusy}
+          aria-busy={isBusy}
         >
-          {isSubmitting ? 'Submitting…' : 'Generate'}
+          {isBusy ? 'Generating...' : 'Generate'}
         </Button>
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      {status && <p className="text-sm text-muted-foreground">{status}</p>}
+      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
     </form>
   )
 }

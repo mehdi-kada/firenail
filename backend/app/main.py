@@ -2,8 +2,11 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.validate import get_current_user
+from app.api.routes import tasks, thumbnails
 
 app = FastAPI()
+
+main_app = app
 
 app.add_middleware(
     CORSMiddleware,
@@ -12,6 +15,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(tasks.router, prefix="/api", tags=["tasks"])
+app.include_router(thumbnails.router, prefix="/api/thumbnails", tags=["thumbnails"])
 
 @app.get("/")
 async def read_root(user = Depends(get_current_user)):

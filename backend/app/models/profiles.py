@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import uuid
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from sqlalchemy import ForeignKey, String, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
 
 from app.database.database import Base
+
+if TYPE_CHECKING:
+    from .images import Image
+    from .jobs import Job
 
 
 class Profile(Base):
@@ -31,6 +37,12 @@ class Profile(Base):
     
     images: Mapped[List["Image"]] = relationship(
         "Image", 
+        back_populates="profile",
+        cascade="all, delete-orphan"
+    )
+    
+    jobs: Mapped[List["Job"]] = relationship(
+        "Job", 
         back_populates="profile",
         cascade="all, delete-orphan"
     )

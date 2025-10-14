@@ -4,3 +4,9 @@
  secondary background black: #2C2C2C 
  for texts : #F5F5F5
  for borders : #555555
+
+- Commands to run the app:
+  - Backend: cd backend && uvicorn app.main:app --reload
+  - Frontend: cd frontend && pnpm dev
+  - Celery Worker: cd backend && celery -A app.celery.celery_app worker --loglevel=info
+  - Redis: docker run -d -p 6379:6379 redis

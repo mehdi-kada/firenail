@@ -2,9 +2,9 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 import os
+from uuid import UUID
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from app.database.database import get_db
 from app.models.profiles import Profile
@@ -33,7 +33,7 @@ def get_current_user(token = Depends(bearer_scheme)):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User ID not in token",
             )
-        return {"user_id": user_id, "claims": payload}
+        return user_id
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -51,20 +51,24 @@ async def get_current_user_profile(
     db: AsyncSession = Depends(get_db)
 ) -> Profile:
     """
-    Get the current user's profile.
-    Since the trigger creates the profile with the same ID as the auth user,
-    we can directly query by the user ID.
+    Get or create the current user's profile.
+    Profiles are keyed by the auth user ID, so we ensure one exists before proceeding.
     """
-    result = await db.execute(
-        select(Profile).where(Profile.id == current_user_id)
-    )
-    profile = result.scalar_one_or_none()
-    
-    if not profile:
+    try:
+        user_uuid = UUID(current_user_id)
+    except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Profile not found"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid user id",
         )
-    
+
+    profile = await db.get(Profile, user_uuid)
+
+    if not profile:
+        profile = Profile(id=user_uuid)
+        db.add(profile)
+        await db.commit()
+        await db.refresh(profile)
+
     return profile
     

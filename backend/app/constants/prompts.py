@@ -1,14 +1,51 @@
-def analysis_prompt(transcript: str) -> str : 
-    return f"i trying to get 3 image searches to feed an image language model alongside summary of youtube video transcript to create a thumbnail for the youtube video, i am gonna give you the transcript and i need a the summary of the transcript plus 3 image search keywords that i can use to get images from an image search api to feed the image model to get the best result ensure that the images relats best to the video transcripts and subjects and title , this is the titile of the video : Steven Universe | Blue Diamond and Yellow Diamond Fight | Change Your Mind | Cartoon Network , here is the transcript : {transcript}, return only this in json format : {{'summary': 'the summary here', 'image_search_keywords': ['keyword1', 'keyword2', 'keyword3']}}"
-    
-    
-transcript_prompt_test = """
-00:00] a video game's art style makes it definable when compared to other games but why would a leading game completely [00:06] alter its art style when it was the central key to their success
-[00:20] day she going to come to my place do whatever I say
-[00:28] there's something about Fortnite's simplistic yet very detailed art style that makes it so much different from modern-day Fortnite and [00:36] even other games every time I see a lobby screen or old gameplay I get the chills most people would [00:43] say it's nostalgia based but I think it's the simplicity and the true craft that Epic Games put into making [00:50] not only Fortnite Battle Royale but Save the World a good comparison of Fortnite's old art I would think would [00:56] be like an old TV show i like to compare it a lot to Spongebob whenever it was about 2008 [01:02] even 2009 there was something about having a lot of detail in a show but it being so simplistic made [01:08] it a lot better it seems like now everything is chaotic and everything is meant to draw your attention so [01:14] much more but in the end whenever something draws your attention too much and it feels addicting it doesn't feel [01:21] as special like with Fortnite they've switched a lot more to the creative aspect allowing other developers to make maps [01:28] so that they can take most of the workload off of themselves the biggest problem with these creative maps though [01:33] is that there's just so many and all of the creative maps have non-stop action for the most part leading [01:39] the simplicity of the game to almost vanish
-[01:49] most of Chapter 1 Fortnite's art style was originated from Save the World a survival zombie game where you had [01:55] to build forts kill zombies and just survive but the team that developed Save the World was given a unique [02:02] development style that created the classic art style not just with the sky the grass or even the textures around [02:10] it was mostly with the models they were set to make everything imperfect creating wonky and curved buildings along with [02:16] imperfect TVs doors and weapon models this helped both battle royale and save the world a lot specifically due to [02:24] the fact that no other game has really done this before imperfections make a game feel authentic leading the player [02:31] to feel a better connection in the game which I believe definitely led to a lot of nostalgia but obviously [02:37] this imperfect art style wasn't just the only thing that led Chapter 1 Fortnite to have one of the best [02:43] art styles it was mostly the oversaturated sky the mountains in the distance everything combined together imperfectly perfect the goofy [02:53] weapons that they would add along with the utility that they would give you made the game have a certain [02:58] style that was recognizable compared to any other game i could sit here for hours and hours and talk about [03:06] just how perfect the art style truly was but in all reality it does no good epic Games saw such [03:13] a large success in battle royale intended to want to innovate just like how any other game would want if [03:20] they wanted to capitalize and be on top they would have to compete with every other game and the only [03:26] way was to innovate but when does innovation come too far and completely divert the game into something different
-[03:39] fortnite Chapter 2 was one of the biggest turning points for the game that we've ever seen there were new [03:45] additions like fishing swimming a brand new map weapon upgrades and so much more but one of the biggest changes [03:53] that were looked over the most was the art style and visuals epic Games had completely changed all of the [04:00] original visuals that they had weapon models the UI the fonts and the list keeps going on and on and [04:06] I'm not going to sit here and say that this change was bad it's something fresh that Fortnite needed because [04:11] we had the same art style weapon models weapons and map for over 2 years also Fortnite's interest started to [04:19] decline at such a rapid rate that they needed something to boost their player count and also their sales but [00_04:25] all in all Fortnite was heading towards something and preparing for events that would completely change their game forever
-[04:36] 3:30 i've been up in James
-[04:46] going
-[04:50] travis Scott's live event in 2020 held over 12 million concurrent players setting a new all-time record for Fortnite Battle [04:59] Royale it was one of the best weeks in Fortnite's history and it truly showed the possibility for gaming and [05:06] for Fortnite but there's just one problem if Epic Games could only get this high of a player count with [05:12] collaborations would they still be able to keep their original style while still being able to innovate or would they [05:19] have to completely alter their overall style to fit the realism of the collabs epic Games saw such a massive [05:27] success in all of the collaborations that they were including into the game that they decided to dedicate a season [05:33] with a focus on a Marvel superhero theme story line called Nexus War it was the first time where we [05:40] really received guns in game a whole new battle pass and a lot of different items that really was focused [05:47] more towards external characters from the game it was really a cool concept and personally chapter 2 season 4 in [05:54] my opinion was one of the greatest seasons that we've ever received in Fortnite and overall the season just did [06:00] amazing for Fortnite since this season did so well and they realized that they could do much more collaborations rather [06:07] than just making original items Fortnite had a huge mindset switch with the way that they handled seasons and chapters [06:14] we started to see more integrations of collaborations like Rick and Morty in chapter 2 season 7 which tied a [06:20] lot with the alien theme spider-man came in chapter 3 season 1 where he was given his own mythic but [06:26] Epic Games wasn't getting fully into collabs until chapter 5 now the biggest thing about chapter 5 is that Epic [06:33] Games switched from Unreal Engine 4 to Unreal Engine 5 now you might be asking how does this tie into [06:40] the art style of Fortnite at all well what a lot of people noticed during Fortnite Chapter 5 in the [06:45] beginning is that it was much more realistic and the biggest thing with chapter 5 as well is that they [06:50] leaned so much more away from the cartoonish style and focused more on the realism to bring in more collaborations [06:58] that being soccer players football players movies basically anything you can think of Epic Games wanted to be able to [07:05] capitalize on and bring more into the game which makes a lot of sense but whenever you focus more on [07:11] the unoriginality and drive more towards what your game's core styles were a lot of the community will split either [07:18] by staying and actually enjoying it or leaving and finding other games creating a whole new player base and in [07:25] my opinion a whole new game and I've seen a lot of art style videos talking about multiple other games [07:31] but I think one of the biggest switches in art style has to be from Fortnite solely because they grew [07:38] at such a fast pace and took over the world so much quicker than any other game i think that's [07:44] the biggest reason why they switched their art style the collaborations the rapid advancement and so many other factors leading [07:52] to it the Epic Games felt stuck and feel like they needed to to grow and a quote that I [07:57] would like you to reflect on with the art style of Fortnite that you will experience many times in your [08:02] life don't mourn the sunset it's what makes the sunrise so powerful
-"""
+def analysis_prompt(transcript: str, video_title: str) -> str : 
+    return f"""i am trying to get 3 image searches to feed an image language model alongside summary of youtube video transcript to create a thumbnail for the youtube video, i am gonna give you the transcript and i need a the summary of the transcript plus 2 image search keywords that i can use to get images from an image search api to feed the image model to get the best result ensure that the images relats best to the video transcripts and subjects and title 
+
+
+Title: {video_title}
+
+Transcript: {transcript}
+
+Return ONLY a valid JSON object in this exact format (no markdown, no extra text):
+{{"summary": "summary here", "image_search_keywords": ["keyword1", "keyword2"]}}"""
+
+
+def thumbnail_generation_prompt(video_title: str, summary: str, keywords: list[str]) -> str:
+
+    return f"""You are an expert thumbnail designer. I will provide you with:
+- Three reference images
+- The title of a YouTube video
+- The transcript of the video
+- A summary of the video content
+
+Your task:
+1. Analyze the title, transcript, and summary to identify the video's main theme, emotional tone, and most visually striking ideas.
+
+2. Create a single, eye-catching thumbnail by combining ONLY the three provided images. Do not generate or add any new elements beyond:
+   - Adjusting the images (crop, resize, color correction, lighting, contrast enhancement)
+   - Blending them together harmoniously
+   - Adding a synthetic or abstract background if necessary for visual cohesion
+
+3. Use the images meaningfully so they reflect the transcript, summary, and title — not just as a random collage, but as a semantic composition that tells the video's story at a glance.
+
+4. Ensure the design is:
+   - Eye-catching and vibrant
+   - Clear and readable at small sizes (mobile thumbnails)
+   - Has strong contrast and a clear focal point
+   - Draws immediate attention with visual hierarchy
+
+5. If text is included, use only short, bold words from or inspired by the title (maximum 4-5 words). Make text highly readable with strong contrast against the background.
+
+6. The composition should evoke the emotional tone identified from the content and entice viewers to click.
+
+**Inputs:**
+
+Video Title: {video_title}
+
+Video Summary: {summary}
+
+
+Reference Image Keywords: {", ".join(keywords)}
+
+**Output:**
+Create a single, polished YouTube thumbnail that uses only the provided images (plus optional background adjustments) to powerfully convey the theme and emotional essence of this video. Make it irresistible to click."""

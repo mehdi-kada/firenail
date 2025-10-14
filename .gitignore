@@ -8,6 +8,10 @@ __pycache__/
 env/
 venv/
 ENV/
+
+# Docker
+.env.docker
+docker-compose.override.yml
 env.bak/
 venv.bak/
 
@@ -107,3 +111,10 @@ tmp/
 temp/
 
 .gitignore
+
+markdown
+testing_
+storage
+
+notes
+notes.txt
