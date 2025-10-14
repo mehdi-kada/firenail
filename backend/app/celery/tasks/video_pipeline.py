@@ -1,7 +1,9 @@
 
 from uuid import UUID
+from sqlalchemy import select
 from app.services import transcripts, analysis, events, crawl
 from app.services.image_generation import generate_thumbnail
+from app.services.storage import upload_thumbnail
 from app.celery.celery_app import celery_app
 from app.database.database import sessionLocal
 from app.models.jobs import Job, JobStatus
@@ -13,17 +15,23 @@ from app.constants.prompts import analysis_prompt, thumbnail_generation_prompt
 def process_video_pipeline(self, job_id: str):
     job_uuid = UUID(job_id)
 
-    print(f"Starting video processing pipeline for job {job_id}")
     with sessionLocal() as session:
         job = session.get(Job, job_uuid)
         if not job:
             raise ValueError(f"Job {job_id} not found")
         job.status = JobStatus.processing
-        session.commit()
+        try:
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
         video_url = job.video_url
 
     def emit(step_name: str, status: str, payload: dict | None = None):
-        events.record_event(job_uuid, step=step_name, status=status, payload=payload)
+        try:
+            events.record_event(job_uuid, step=step_name, status=status, payload=payload)
+        except Exception as exc:
+            print(f"Failed to record event for job {job_uuid} ({step_name}:{status}): {exc}")
 
     emit("job", "processing", {"video_url": video_url})
 
@@ -57,8 +65,6 @@ def process_video_pipeline(self, job_id: str):
                     })
             else:
                 print(f"No images found for keyword: {keyword}")
-        
-
 
         thumbnail_url = None
         if len(image_urls) >= 1:
@@ -85,36 +91,58 @@ def process_video_pipeline(self, job_id: str):
         with sessionLocal() as session:
             job = session.get(Job, job_uuid)
             if job:
-                video_record = Video(
-                    job_id=job_uuid,
-                    youtube_id=meta.video_id,
-                    title=meta.title,
-                    summary=summary
-                )
-                session.add(video_record)
+                existing_video = session.execute(
+                    select(Video).where(Video.job_id == job_uuid)
+                ).scalar_one_or_none()
+                if not existing_video:
+                    video_record = Video(
+                        job_id=job_uuid,
+                        youtube_id=meta.video_id,
+                        title=meta.title,
+                        summary=summary
+                    )
+                    session.add(video_record)
                 
                 for img_data in image_records:
-                    image_record = Image(
-                        job_id=job_uuid,
-                        profile_id=job.user_id,
-                        keywords=[img_data["keyword"]],
-                        firecrawl_payload=img_data["firecrawl_payload"],
-                        storage_public_url=img_data["url"]
-                    )
-                    session.add(image_record)
+                    existing_image = session.execute(
+                        select(Image).where(
+                            Image.job_id == job_uuid,
+                            Image.storage_public_url == img_data["url"]
+                        )
+                    ).scalar_one_or_none()
+                    if not existing_image:
+                        image_record = Image(
+                            job_id=job_uuid,
+                            profile_id=job.user_id,
+                            keywords=[img_data["keyword"]],
+                            firecrawl_payload=img_data["firecrawl_payload"],
+                            storage_public_url=img_data["url"]
+                        )
+                        session.add(image_record)
 
                 if thumbnail_url:
-                    generated_image = Image(
-                        job_id=job_uuid,
-                        profile_id=job.user_id,
-                        keywords=keywords or ["thumbnail"],
-                        firecrawl_payload=None,
-                        storage_public_url=thumbnail_url,
-                    )
-                    session.add(generated_image)
+                    existing_generated = session.execute(
+                        select(Image).where(
+                            Image.job_id == job_uuid,
+                            Image.storage_public_url == thumbnail_url
+                        )
+                    ).scalar_one_or_none()
+                    if not existing_generated:
+                        generated_image = Image(
+                            job_id=job_uuid,
+                            profile_id=job.user_id,
+                            keywords=keywords or ["thumbnail"],
+                            firecrawl_payload=None,
+                            storage_public_url=thumbnail_url,
+                        )
+                        session.add(generated_image)
                 
                 job.status = JobStatus.completed
-                session.commit()
+                try:
+                    session.commit()
+                except Exception:
+                    session.rollback()
+                    raise
 
         emit("done", "completed", {"images_count": len(image_urls), "thumbnail_url": thumbnail_url})
         return {"status": "success"}
@@ -126,6 +154,10 @@ def process_video_pipeline(self, job_id: str):
             if job:
                 job.status = JobStatus.failed
                 job.error_message = str(exc)
-                session.commit()
+                try:
+                    session.commit()
+                except Exception:
+                    session.rollback()
+                    raise
         
         raise

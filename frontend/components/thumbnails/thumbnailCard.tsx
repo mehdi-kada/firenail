@@ -21,6 +21,9 @@ export function ThumbnailCard({
   onDownload,
   secondaryHref,
 }: ThumbnailCardProps) {
+  const [imageLoaded, setImageLoaded] = React.useState(false)
+  const [imageError, setImageError] = React.useState(false)
+
   const formattedDate = React.useMemo(() => {
     if (!createdAt) return null
     try {
@@ -41,15 +44,48 @@ export function ThumbnailCard({
 
   const secondaryUrl = secondaryHref ?? storageUrl
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('Image failed to load:', storageUrl)
+    console.error('Error event:', e)
+    setImageError(true)
+  }
+
+  const handleImageLoad = () => {
+    setImageLoaded(true)
+  }
+
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('ThumbnailCard received storageUrl:', storageUrl)
+      console.log('storageUrl type:', typeof storageUrl, 'isEmpty:', !storageUrl)
+    }
+  }, [storageUrl])
+
   return (
     <div className="bg-secondary-background border-border flex flex-col rounded-lg border p-4">
-      <div className="aspect-video w-full overflow-hidden rounded-md bg-background mb-4">
-        <img
-          src={storageUrl}
-          alt={displayTitle}
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
+      <div className="aspect-video w-full overflow-hidden rounded-md bg-background mb-4 relative">
+        {storageUrl && !imageError ? (
+          <>
+            {!imageLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background">
+                <div className="text-text/50 text-sm">Loading...</div>
+              </div>
+            )}
+            <img
+              src={storageUrl}
+              alt={displayTitle}
+              className="h-full w-full object-cover"
+              loading="lazy"
+              onError={handleImageError}
+              onLoad={handleImageLoad}
+              style={{ display: imageLoaded ? 'block' : 'none' }}
+            />
+          </>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-text/50 text-sm">
+            {imageError ? 'Failed to load image' : 'No image available'}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 flex-grow">
@@ -60,18 +96,7 @@ export function ThumbnailCard({
           ) : null}
         </div>
 
-        {keywordList.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {keywordList.map((keyword) => (
-              <span
-                key={keyword}
-                className="border-border bg-background/40 text-text/80 rounded-full border px-3 py-1 text-xs font-medium"
-              >
-                {keyword}
-              </span>
-            ))}
-          </div>
-        ) : null}
+
       </div>
 
       <div className="mt-4 flex flex-col gap-2">

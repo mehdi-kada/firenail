@@ -3,23 +3,6 @@ import LandingNav from "@/components/navigation/landingNav";
 import { useEffect } from "react";
 
 export default function Home() {
-  useEffect(() => {
-    const fetchData = async () => {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
-      if (!backendUrl) {
-        console.warn("NEXT_PUBLIC_BACKEND_URL is not set");
-        return;
-      }
-
-      const apiUrl = backendUrl.endsWith("/") ? backendUrl : `${backendUrl}/`;
-      const response = await fetch(apiUrl);
-      console.log(response);
-      const data = await response.json();
-      console.log(data);
-    };
-    fetchData();
-  }, []);
   return (
     <>
     <LandingNav/>

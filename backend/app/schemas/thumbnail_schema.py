@@ -14,3 +14,11 @@ class ThumbnailResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PaginatedThumbnailResponse(BaseModel):
+    items: list[ThumbnailResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
