@@ -95,12 +95,13 @@ export default function ThumbnailsPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {thumbnails.map((thumbnail) => (
+              {thumbnails.map((thumbnail, index) => (
                 <ThumbnailCard
                   key={thumbnail.id}
                   storageUrl={thumbnail.storage_url}
                   createdAt={thumbnail.created_at}
                   keywords={thumbnail.keywords}
+                  priority={index < 6}
                 />
               ))}
             </div>

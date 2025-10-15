@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Image from 'next/image'
 
 import { Button } from '@/components/ui/button'
 
@@ -11,6 +12,7 @@ type ThumbnailCardProps = {
   keywords?: string[] | null
   onDownload?: () => void
   secondaryHref?: string
+  priority?: boolean
 }
 
 export function ThumbnailCard({
@@ -20,8 +22,8 @@ export function ThumbnailCard({
   keywords,
   onDownload,
   secondaryHref,
+  priority = false,
 }: ThumbnailCardProps) {
-  const [imageLoaded, setImageLoaded] = React.useState(false)
   const [imageError, setImageError] = React.useState(false)
 
   const formattedDate = React.useMemo(() => {
@@ -44,43 +46,26 @@ export function ThumbnailCard({
 
   const secondaryUrl = secondaryHref ?? storageUrl
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageError = () => {
     console.error('Image failed to load:', storageUrl)
-    console.error('Error event:', e)
     setImageError(true)
   }
-
-  const handleImageLoad = () => {
-    setImageLoaded(true)
-  }
-
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('ThumbnailCard received storageUrl:', storageUrl)
-      console.log('storageUrl type:', typeof storageUrl, 'isEmpty:', !storageUrl)
-    }
-  }, [storageUrl])
 
   return (
     <div className="bg-secondary-background border-border flex flex-col rounded-lg border p-4">
       <div className="aspect-video w-full overflow-hidden rounded-md bg-background mb-4 relative">
         {storageUrl && !imageError ? (
-          <>
-            {!imageLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background">
-                <div className="text-text/50 text-sm">Loading...</div>
-              </div>
-            )}
-            <img
-              src={storageUrl}
-              alt={displayTitle}
-              className="h-full w-full object-cover"
-              loading="lazy"
-              onError={handleImageError}
-              onLoad={handleImageLoad}
-              style={{ display: imageLoaded ? 'block' : 'none' }}
-            />
-          </>
+          <Image
+            src={storageUrl}
+            alt={displayTitle}
+            fill
+            className="object-cover"
+            onError={handleImageError}
+            priority={priority}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzAwIiBoZWlnaHQ9IjQ3NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiLz4="
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-text/50 text-sm">
             {imageError ? 'Failed to load image' : 'No image available'}

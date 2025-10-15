@@ -3,7 +3,6 @@ from uuid import UUID
 from sqlalchemy import select
 from app.services import transcripts, analysis, events, crawl
 from app.services.image_generation import generate_thumbnail
-from app.services.storage import upload_thumbnail
 from app.celery.celery_app import celery_app
 from app.database.database import sessionLocal
 from app.models.jobs import Job, JobStatus
@@ -49,7 +48,6 @@ def process_video_pipeline(self, job_id: str):
         emit("analysis", "completed", {"summary": summary[:170],"keywords":keywords})
 
         image_urls = []
-        image_records = []
         for keyword in keywords:
             images = crawl.crawl_images(keyword, limit=1)
             if images and len(images) > 0:
@@ -57,12 +55,6 @@ def process_video_pipeline(self, job_id: str):
                 image_url = image_data.get("imageUrl")
                 if image_url:
                     image_urls.append({"keyword": keyword, "url": image_url})
-                    
-                    image_records.append({
-                        "keyword": keyword,
-                        "url": image_url,
-                        "firecrawl_payload": image_data
-                    })
             else:
                 print(f"No images found for keyword: {keyword}")
 
@@ -103,22 +95,6 @@ def process_video_pipeline(self, job_id: str):
                     )
                     session.add(video_record)
                 
-                for img_data in image_records:
-                    existing_image = session.execute(
-                        select(Image).where(
-                            Image.job_id == job_uuid,
-                            Image.storage_public_url == img_data["url"]
-                        )
-                    ).scalar_one_or_none()
-                    if not existing_image:
-                        image_record = Image(
-                            job_id=job_uuid,
-                            profile_id=job.user_id,
-                            keywords=[img_data["keyword"]],
-                            firecrawl_payload=img_data["firecrawl_payload"],
-                            storage_public_url=img_data["url"]
-                        )
-                        session.add(image_record)
 
                 if thumbnail_url:
                     existing_generated = session.execute(
