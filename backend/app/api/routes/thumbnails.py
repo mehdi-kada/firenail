@@ -26,15 +26,12 @@ async def list_thumbnails(
     """
     List thumbnails for the current user profile with pagination.
     """
-    # Get total count
     count_query = select(func.count()).select_from(Image).where(Image.profile_id == profile.id)
     count_result = await db.execute(count_query)
     total = count_result.scalar() or 0
 
-    # Calculate offset
     offset = (page - 1) * page_size
 
-    # Get paginated results
     q = select(Image).where(Image.profile_id == profile.id).order_by(Image.created_at.desc()).limit(page_size).offset(offset)
     result = await db.execute(q)
     images = result.scalars().all()
@@ -44,6 +41,7 @@ async def list_thumbnails(
             id=image.id,
             job_id=image.job_id,
             storage_url=image.storage_public_url,
+            video_title=image.video_title,
             keywords=image.keywords or [],
             created_at=image.created_at,
         )

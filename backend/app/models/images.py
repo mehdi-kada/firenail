@@ -18,6 +18,7 @@ class Image(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False)
     profile_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False)
+    video_title: Mapped[Optional[str]] = mapped_column(Text)
     keywords: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     firecrawl_payload: Mapped[Optional[dict]] = mapped_column(JSON)
     storage_public_url: Mapped[Optional[str]] = mapped_column(Text)

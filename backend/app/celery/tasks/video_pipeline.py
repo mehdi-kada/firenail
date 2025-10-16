@@ -107,6 +107,7 @@ def process_video_pipeline(self, job_id: str):
                         generated_image = Image(
                             job_id=job_uuid,
                             profile_id=job.user_id,
+                            video_title=meta.title,
                             keywords=keywords or ["thumbnail"],
                             firecrawl_payload=None,
                             storage_public_url=thumbnail_url,

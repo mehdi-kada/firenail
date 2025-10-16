@@ -11,6 +11,7 @@ type ThumbnailResponse = {
   id: string
   job_id: string
   storage_url: string
+  video_title?: string | null
   keywords: string[]
   created_at: string
 }
@@ -99,6 +100,7 @@ export default function ThumbnailsPage() {
                 <ThumbnailCard
                   key={thumbnail.id}
                   storageUrl={thumbnail.storage_url}
+                  title={thumbnail.video_title}
                   createdAt={thumbnail.created_at}
                   keywords={thumbnail.keywords}
                   priority={index < 6}

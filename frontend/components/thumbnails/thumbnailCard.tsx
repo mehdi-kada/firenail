@@ -51,6 +51,24 @@ export function ThumbnailCard({
     setImageError(true)
   }
 
+  const downloadImage = async () => {
+    try {
+      const response = await fetch(storageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `thumbnail-${Date.now()}.webp`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      if (onDownload) onDownload();
+    } catch (error) {
+      console.error('Failed to download image:', error);
+    }
+  };
+
   return (
     <div className="bg-secondary-background border-border flex flex-col rounded-lg border p-4">
       <div className="aspect-video w-full overflow-hidden rounded-md bg-background mb-4 relative">
@@ -85,10 +103,8 @@ export function ThumbnailCard({
       </div>
 
       <div className="mt-4 flex flex-col gap-2">
-        <Button asChild onClick={onDownload} className="w-full bg-primary text-text font-bold hover:bg-opacity-90">
-          <a href={storageUrl} download>
-            Download Thumbnail
-          </a>
+        <Button onClick={downloadImage} className="w-full bg-primary text-text font-bold hover:bg-opacity-90">
+          Download Thumbnail
         </Button>
 
         <Button
