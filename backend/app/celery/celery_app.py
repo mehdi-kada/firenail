@@ -22,4 +22,8 @@ celery_app.conf.update(
     # Ensure tasks are not run eagerly in the same process, forcing them to the queue.
     task_always_eager=False,
     task_eager_propagates=False,
+    # Worker configuration for concurrent processing
+    worker_prefetch_multiplier=1,
+    task_acks_late=True,
+    worker_disable_rate_limits=False,
 )

@@ -9,6 +9,7 @@ class ThumbnailResponse(BaseModel):
     id: UUID
     job_id: UUID
     storage_url: Optional[str]
+    video_title: Optional[str]
     keywords: list[str]
     created_at: datetime
 
