@@ -1,15 +1,38 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/client"
 
 type LandingNavProps = {
 	className?: string
 }
 
 export function LandingNav({ className }: LandingNavProps) {
+	const [user, setUser] = useState<any>(null)
+
+	useEffect(() => {
+		const supabase = createClient()
+
+		const checkUser = async () => {
+			const {
+				data: { user },
+			} = await supabase.auth.getUser()
+			setUser(user)
+		}
+
+		checkUser()
+
+		// Listen for auth changes
+		const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+			setUser(session?.user ?? null)
+		})
+
+		return () => subscription.unsubscribe()
+	}, [])
 	return (
 		<header
 			className={cn(
@@ -31,12 +54,20 @@ export function LandingNav({ className }: LandingNavProps) {
 				</Link>
 
 				<div className="flex items-center gap-2 sm:gap-3">
-					<Button variant="ghost" className="px-3 sm:px-4" asChild>
-						<Link href="/auth/login">Log in</Link>
-					</Button>
-					<Button className="px-3 sm:px-5" asChild>
-						<Link href="/auth/register">Sign up</Link>
-					</Button>
+					{user ? (
+						<Button className="px-3 sm:px-5" asChild>
+							<Link href="/thumbnails">Thumbnails</Link>
+						</Button>
+					) : (
+						<>
+							<Button variant="ghost" className="px-3 sm:px-4" asChild>
+								<Link href="/auth/login">Log in</Link>
+							</Button>
+							<Button className="px-3 sm:px-5" asChild>
+								<Link href="/auth/register">Sign up</Link>
+							</Button>
+						</>
+					)}
 				</div>
 			</nav>
 		</header>

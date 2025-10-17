@@ -38,6 +38,8 @@ Your task:
 
 6. The composition should evoke the emotional tone identified from the content and entice viewers to click.
 
+7. **IMPORTANT:** The final image must be in a 16:9 aspect ratio (1920x1080 or equivalent proportions). This is critical for YouTube thumbnail formatting.
+
 **Inputs:**
 
 Video Title: {video_title}

@@ -7,31 +7,32 @@ from PIL import Image
 from app.supabase.supabase_client import supabase_admin
 
 
-def optimize_image(image_bytes: bytes, max_width : int = 1280, quality: int = 85) -> bytes:
-    """ Optimizes the image from any format to a webp"""
-    image = Image.open(io.BytesIO(image_bytes))
-    if image.mode in ('RGBA', 'LA', 'P'):
-        background = Image.new('RGB', image.size, (255,255,255))
-        if image.mode == 'P':
-            image = image.convert('RGBA')
-        background.paste(image, mask=image.split()[-1] if image.mode in ('RGBA', 'LA') else None)
-        image = background
+# def optimize_image(image_bytes: bytes, max_width : int = 1280, quality: int = 85) -> bytes:
+#     """ Optimizes the image from any format to a webp"""
+#     image = Image.open(io.BytesIO(image_bytes))
+#     if image.mode in ('RGBA', 'LA', 'P'):
+#         background = Image.new('RGB', image.size, (255,255,255))
+#         if image.mode == 'P':
+#             image = image.convert('RGBA')
+#         background.paste(image, mask=image.split()[-1] if image.mode in ('RGBA', 'LA') else None)
+#         image = background
+#
+#     if image.width > max_width:
+#         ratio = max_width/image.width
+#         new_height = int(image.height * ratio)
+#         image = image.resize((max_width, new_height), Image.Resampling.LANCZOS)
+#
+#     output = io.BytesIO()
+#     image.save(output, format='WebP',quality=quality, method=6)
+#     output.seek(0)
+#     return output.read()
 
-    if image.width > max_width:
-        ratio = max_width/image.width
-        new_height = int(image.height * ratio)
-        image = image.resize((max_width, new_height), Image.Resampling.LANCZOS)
 
-    output = io.BytesIO()
-    image.save(output, format='WebP',quality=quality, method=6)
-    output.seek(0)
-    return output.read()
+def     upload_thumbnail(job_id: str, image_bytes: bytes):
+    """Upload thumbnail image to storage"""
 
-
-def upload_thumbnail(job_id: str, image_bytes: bytes):
-    """Upload an optimized thumbnail image to storage"""
-
-    thumbnail_bytes = optimize_image(image_bytes)
+    # thumbnail_bytes = optimize_image(image_bytes)
+    thumbnail_bytes = image_bytes
     
     file_id = str(uuid.uuid4())
 

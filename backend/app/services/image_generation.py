@@ -60,7 +60,8 @@ def generate_thumbnail(
     
     payload = {
         "reference_images": valid_urls,
-        "prompt": prompt
+        "prompt": prompt,
+        "aspect_ratio": "widescreen_16_9",
     }
     
     headers = {
