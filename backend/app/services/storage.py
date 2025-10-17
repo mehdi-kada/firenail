@@ -36,7 +36,7 @@ def     upload_thumbnail(job_id: str, image_bytes: bytes):
     
     file_id = str(uuid.uuid4())
 
-    display_path = f"thumbnails/{job_id}/{file_id}.webp"
+    display_path = f"thumbnails/{job_id}/{file_id}.png"
     supabase_admin.storage.from_("thumbnails").upload(
         display_path,
         thumbnail_bytes,
