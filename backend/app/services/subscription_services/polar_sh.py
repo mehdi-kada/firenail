@@ -12,7 +12,7 @@ polar = Polar(access_token=POLAR_ACCESS_TOKEN)
 async def create_polar_checkout(product_id: str, user_id: str, user_email: str):
     checkout = await polar.checkouts.create(request={
         "products": [product_id],
-        "success_url": f"{BACKEND_URL}/thmbnails/success?checkout_id={{CHECKOUT_ID}}",
+        "success_url": f"{BACKEND_URL}/thumbnails/success?checkout_id={CHECKOUT_ID}",
         "customer_email": user_email,
         "metadata": {"user_id": user_id},
         "allow_discount_codes": True,

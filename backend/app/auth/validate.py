@@ -33,7 +33,9 @@ def get_current_user(token = Depends(bearer_scheme)):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User ID not in token",
             )
-        return user_id
+        
+        email = payload.get("email")
+        return {"user_id": user_id, "email": email}
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -47,7 +49,7 @@ def get_current_user(token = Depends(bearer_scheme)):
     
 
 async def get_current_user_profile(
-    current_user_id: str = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> Profile:
     """
@@ -55,7 +57,7 @@ async def get_current_user_profile(
     Profiles are keyed by the auth user ID, so we ensure one exists before proceeding.
     """
     try:
-        user_uuid = UUID(current_user_id)
+        user_uuid = UUID(current_user["user_id"])
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
