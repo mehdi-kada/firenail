@@ -14,6 +14,9 @@ export type PricingCardProps = {
   highlighted?: boolean
   accentLabel?: string
   ctaVariant?: "default" | "outline"
+  onCTAClick?: () => void | Promise<void>
+  isLoading?: boolean
+  disabled?: boolean
 }
 
 export function PricingCard({
@@ -26,6 +29,9 @@ export function PricingCard({
   highlighted,
   accentLabel,
   ctaVariant = highlighted ? "default" : "outline",
+  onCTAClick,
+  isLoading = false,
+  disabled = false,
 }: PricingCardProps) {
   return (
     <article
@@ -63,8 +69,10 @@ export function PricingCard({
             ? "bg-primary text-primary-foreground hover:bg-primary/90"
             : "border-primary/60 text-primary hover:border-primary hover:bg-primary/10",
         )}
+        onClick={onCTAClick}
+        disabled={disabled || isLoading}
       >
-        {ctaLabel}
+        {isLoading ? "Loading..." : ctaLabel}
       </Button>
 
       <ul className="mt-8 space-y-4 text-sm">

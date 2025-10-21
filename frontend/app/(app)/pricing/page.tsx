@@ -1,51 +1,120 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { PricingFooter } from "@/components/pricing/PricingFooter"
 import { PricingGrid, type PricingPlan } from "@/components/pricing/PricingGrid"
 import { PricingHero } from "@/components/pricing/PricingHero"
-
-const plans: PricingPlan[] = [
-  {
-    id: "basic",
-    title: "Basic",
-    price: "Free",
-    description: "For individuals getting started.",
-    ctaLabel: "Get Started",
-    features: [
-      "Up to 5 video transcripts per month",
-      "Up to 10 image generations",
-      "Community support",
-    ],
-  },
-  {
-    id: "pro",
-    title: "Pro",
-    price: "$19",
-    priceSuffix: "/month",
-    description: "For power users and small teams.",
-    ctaLabel: "Choose Plan",
-    features: [
-      "Unlimited video transcripts",
-      "Unlimited image generations",
-      "Priority email support",
-      "Advanced generation options",
-    ],
-    highlighted: true,
-    accentLabel: "Most Popular",
-  },
-  {
-    id: "enterprise",
-    title: "Enterprise",
-    price: "Contact Us",
-    description: "For large organizations.",
-    ctaLabel: "Contact Sales",
-    features: [
-      "Custom solutions & integrations",
-      "Dedicated account manager",
-      "Premium support & SLA",
-    ],
-  },
-]
+import { useSubscription } from "@/hooks/useSubscription"
+import { subscriptionApi } from "@/lib/api/subscriptions"
+import { createClient } from "@/lib/supabase/client"
 
 export default function PricingPage() {
+  const router = useRouter()
+  const { subscription, isPremium, loading: subLoading } = useSubscription()
+  const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null)
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user))
+  }, [])
+
+  const handlePlanClick = async (planId: string, productId?: string) => {
+    if (planId === "basic" || planId === "enterprise") {
+      if (planId === "enterprise") {
+        window.location.href = "mailto:sales@yourapp.com"
+      }
+      return
+    }
+
+    if (!user) {
+      router.push("/auth/login?redirect=/pricing")
+      return
+    }
+
+    if (isPremium) {
+      try {
+        setLoadingPlanId(planId)
+        const portalUrl = await subscriptionApi.getCustomerPortal()
+        window.location.href = portalUrl
+      } catch (error) {
+        console.error("Failed to open portal:", error)
+        alert("Failed to open customer portal. Please try again.")
+      } finally {
+        setLoadingPlanId(null)
+      }
+      return
+    }
+
+    if (!productId) {
+      alert("Product ID not configured")
+      return
+    }
+
+    try {
+      setLoadingPlanId(planId)
+      const checkoutUrl = await subscriptionApi.createCheckout(productId)
+      window.location.href = checkoutUrl
+    } catch (error: any) {
+      console.error("Checkout error:", error)
+      if (error.response?.status === 400) {
+        alert("You already have an active subscription")
+      } else {
+        alert("Failed to start checkout. Please try again.")
+      }
+    } finally {
+      setLoadingPlanId(null)
+    }
+  }
+
+  const plans: PricingPlan[] = [
+    {
+      id: "basic",
+      title: "Basic",
+      price: "Free",
+      description: "For individuals getting started.",
+      ctaLabel: "Get Started",
+      features: [
+        "Up to 5 video transcripts per month",
+        "Up to 10 image generations",
+        "Community support",
+      ],
+      disabled: isPremium,
+    },
+    {
+      id: "pro",
+      title: "Pro",
+      price: "$19",
+      priceSuffix: "/month",
+      description: "For power users and small teams.",
+      ctaLabel: isPremium ? "Manage Subscription" : "Choose Plan",
+      features: [
+        "Unlimited video transcripts",
+        "Unlimited image generations",
+        "Priority email support",
+        "Advanced generation options",
+      ],
+      highlighted: true,
+      accentLabel: isPremium 
+        ? (subscription?.status === "active" ? "✓ Active" : "⚠ Cancelled")
+        : "Most Popular",
+      productId: process.env.NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID,
+    },
+    {
+      id: "enterprise",
+      title: "Enterprise",
+      price: "Contact Us",
+      description: "For large organizations.",
+      ctaLabel: "Contact Sales",
+      features: [
+        "Custom solutions & integrations",
+        "Dedicated account manager",
+        "Premium support & SLA",
+      ],
+    },
+  ]
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <main className="flex-1">
@@ -55,7 +124,25 @@ export default function PricingPage() {
             description="Simple, transparent pricing. No hidden fees."
           />
 
-          <PricingGrid plans={plans} />
+          {isPremium && subscription && (
+            <div className="mt-8 mx-auto max-w-2xl p-4 bg-primary/10 border border-primary rounded-lg text-center">
+              <p className="font-medium">
+                <strong>Current Plan:</strong> {subscription.plan_name}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {subscription.cancel_at_period_end 
+                  ? `Expires on ${new Date(subscription.current_period_end).toLocaleDateString()}`
+                  : `Renews on ${new Date(subscription.renews_at || subscription.current_period_end).toLocaleDateString()}`
+                }
+              </p>
+            </div>
+          )}
+
+          <PricingGrid 
+            plans={plans}
+            onPlanClick={handlePlanClick}
+            loadingPlanId={loadingPlanId}
+          />
         </div>
       </main>
 
