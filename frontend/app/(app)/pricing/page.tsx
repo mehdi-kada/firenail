@@ -21,10 +21,7 @@ export default function PricingPage() {
   }, [])
 
   const handlePlanClick = async (planId: string, productId?: string) => {
-    if (planId === "basic" || planId === "enterprise") {
-      if (planId === "enterprise") {
-        window.location.href = "mailto:sales@yourapp.com"
-      }
+    if (planId === "basic") {
       return
     }
 
@@ -85,7 +82,7 @@ export default function PricingPage() {
     {
       id: "pro",
       title: "Pro",
-      price: "$19",
+      price: "$12.99",
       priceSuffix: "/month",
       description: "For power users and small teams.",
       ctaLabel: isPremium ? "Manage Subscription" : "Choose Plan",
@@ -102,16 +99,24 @@ export default function PricingPage() {
       productId: process.env.NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID,
     },
     {
-      id: "enterprise",
-      title: "Enterprise",
-      price: "Contact Us",
-      description: "For large organizations.",
-      ctaLabel: "Contact Sales",
+      id: "yearly",
+      title: "Pro",
+      price: "$99.99",
+      priceSuffix: "/year",
+      description: "Best value - Save 35% annually!",
+      ctaLabel: isPremium ? "Manage Subscription" : "Choose Yearly Plan",
       features: [
-        "Custom solutions & integrations",
-        "Dedicated account manager",
-        "Premium support & SLA",
+        "Unlimited video transcripts",
+        "Unlimited image generations",
+        "Priority email support",
+        "Advanced generation options",
+        "2 months free!",
       ],
+      highlighted: false,
+      accentLabel: isPremium 
+        ? (subscription?.plan_name.includes("Yearly") || subscription?.plan_name.includes("year") ? "✓ Active" : undefined)
+        : "Best Value",
+      productId: process.env.NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID,
     },
   ]
 
