@@ -8,7 +8,8 @@ load_dotenv()
 POLAR_ACCESS_TOKEN = os.getenv("POLAR_ACCESS_TOKEN")
 APP_URL = os.getenv("APP_URL", "http://localhost:3000")
 
-polar = Polar(access_token=POLAR_ACCESS_TOKEN)
+polar = Polar(  server="sandbox",
+              access_token=POLAR_ACCESS_TOKEN)
 
 
 async def create_polar_checkout(
@@ -19,9 +20,9 @@ async def create_polar_checkout(
 ) -> Optional[str]:
     """Create Polar checkout session"""
     try:
-        checkout = await polar.checkouts.create(request={
+        checkout = polar.checkouts.create(request={
             "products": [product_id],
-            "success_url": success_url or f"{APP_URL}/dashboard?success=true",
+            "success_url": success_url or f"{APP_URL}/thumbnails?success=true",
             "customer_email": user_email,
             "metadata": {"user_id": user_id},
             "allow_discount_codes": True,
@@ -36,7 +37,7 @@ async def create_polar_checkout(
 async def create_polar_portal_session(customer_id: str) -> str:
     """Create customer portal session"""
     try:
-        session = await polar.customer_sessions.create(request={
+        session = polar.customer_sessions.create(request={
             "customer_id": customer_id,
         })
         return session.customer_portal_url
@@ -48,7 +49,7 @@ async def create_polar_portal_session(customer_id: str) -> str:
 async def get_polar_subscription(subscription_id: str):
     """Get subscription from Polar"""
     try:
-        return await polar.subscriptions.get(id=subscription_id)
+        return  polar.subscriptions.get(id=subscription_id)
     except Exception as e:
         print(f"Error getting Polar subscription: {e}")
         return None
