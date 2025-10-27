@@ -7,26 +7,15 @@ import { PricingGrid, type PricingPlan } from "@/components/pricing/PricingGrid"
 import { PricingHero } from "@/components/pricing/PricingHero"
 import { useSubscription } from "@/hooks/useSubscription"
 import { subscriptionApi } from "@/lib/api/subscriptions"
-import { createClient } from "@/lib/supabase/client"
+import { getPricingPlans } from "@/lib/constants/pricing"
 
 export default function PricingPage() {
   const router = useRouter()
   const { subscription, isPremium, loading: subLoading } = useSubscription()
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null)
-  const [user, setUser] = useState<any>(null)
-
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user))
-  }, [])
 
   const handlePlanClick = async (planId: string, productId?: string) => {
     if (planId === "basic") {
-      return
-    }
-
-    if (!user) {
-      router.push("/auth/login?redirect=/pricing")
       return
     }
 
@@ -65,60 +54,7 @@ export default function PricingPage() {
     }
   }
 
-  const plans: PricingPlan[] = [
-    {
-      id: "basic",
-      title: "Basic",
-      price: "Free",
-      description: "For individuals getting started.",
-      ctaLabel: "Get Started",
-      features: [
-        "Up to 5 video transcripts per month",
-        "Up to 10 image generations",
-        "Community support",
-      ],
-      disabled: isPremium,
-    },
-    {
-      id: "pro",
-      title: "Pro",
-      price: "$12.99",
-      priceSuffix: "/month",
-      description: "For power users and small teams.",
-      ctaLabel: isPremium ? "Manage Subscription" : "Choose Plan",
-      features: [
-        "Unlimited video transcripts",
-        "Unlimited image generations",
-        "Priority email support",
-        "Advanced generation options",
-      ],
-      highlighted: true,
-      accentLabel: isPremium 
-        ? (subscription?.status === "active" ? "✓ Active" : "⚠ Cancelled")
-        : "Most Popular",
-      productId: process.env.NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID,
-    },
-    {
-      id: "yearly",
-      title: "Pro",
-      price: "$99.99",
-      priceSuffix: "/year",
-      description: "Best value - Save 35% annually!",
-      ctaLabel: isPremium ? "Manage Subscription" : "Choose Yearly Plan",
-      features: [
-        "Unlimited video transcripts",
-        "Unlimited image generations",
-        "Priority email support",
-        "Advanced generation options",
-        "2 months free!",
-      ],
-      highlighted: false,
-      accentLabel: isPremium 
-        ? (subscription?.plan_name.includes("Yearly") || subscription?.plan_name.includes("year") ? "✓ Active" : undefined)
-        : "Best Value",
-      productId: process.env.NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID,
-    },
-  ]
+  const plans = getPricingPlans({ isPremium, subscription })
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
