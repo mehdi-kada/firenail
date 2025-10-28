@@ -45,6 +45,7 @@ def process_video_pipeline(self, job_id: str):
         analysis_result = analysis.analyze_transcript(prompt)
         summary = analysis_result.get("summary","")
         keywords = analysis_result.get("image_search_keywords",[])
+        style_direction = analysis_result.get("style_direction","")
         emit("analysis", "completed", {"summary": summary[:170],"keywords":keywords})
 
         image_urls = []
@@ -63,7 +64,8 @@ def process_video_pipeline(self, job_id: str):
             thumbnail_prompt = thumbnail_generation_prompt(
                 video_title=meta.title,
                 summary=summary,
-                keywords=keywords
+                keywords=keywords,
+                style_direction=style_direction
             )
             try:
                 emit("thumbnail", "started")

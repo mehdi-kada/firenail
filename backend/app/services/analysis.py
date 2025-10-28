@@ -16,18 +16,18 @@ load_dotenv()
     wait=wait_exponential(multiplier=2, min=1, max=8),
 )
 def analyze_transcript(prompt: str) -> Dict[str, Any]:
-    api_key = os.environ.get('OPENROUTER_KEY')
+    api_key = os.environ.get('GROQ_API_KEY')
     if not api_key:
-        raise ValueError("OPENROUTER_API_KEY or OPENROUTER_KEY environment variable not set")
+        raise ValueError("GROQ_API_KEY environment variable not set")
     
     response = httpx.post(
-        "https://openrouter.ai/api/v1/chat/completions",
+        "https://api.groq.com/openai/v1/chat/completions",
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         },
         json={
-            "model": "x-ai/grok-4-fast",
+            "model": "moonshotai/kimi-k2-instruct-0905",
             "messages": [
                 {"role": "user", "content": prompt},
             ],
@@ -65,5 +65,6 @@ def analyze_transcript(prompt: str) -> Dict[str, Any]:
 
     summary = parsed_data.get('summary', '')
     image_search_keywords = parsed_data.get('image_search_keywords', [])
+    style_direction = parsed_data.get('style_direction', '')
 
-    return {"summary": summary, "image_search_keywords": image_search_keywords}
+    return {"summary": summary, "image_search_keywords": image_search_keywords, "style_direction": style_direction}
