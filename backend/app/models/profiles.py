@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from typing import List, Optional, TYPE_CHECKING
-from sqlalchemy import ForeignKey, String, DateTime, func
+from sqlalchemy import ForeignKey, String, DateTime, Boolean, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
@@ -12,6 +12,7 @@ from app.database.database import Base
 if TYPE_CHECKING:
     from .images import Image
     from .jobs import Job
+    from .subscriptions import Subscription
 
 
 class Profile(Base):
@@ -24,6 +25,7 @@ class Profile(Base):
     
     username: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True)
     avatar_url: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    is_premium: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), 
@@ -45,4 +47,10 @@ class Profile(Base):
         "Job", 
         back_populates="profile",
         cascade="all, delete-orphan"
+    )
+    
+    subscription: Mapped[Optional["Subscription"]] = relationship(
+        "Subscription",
+        back_populates="profile",
+        uselist=False
     )

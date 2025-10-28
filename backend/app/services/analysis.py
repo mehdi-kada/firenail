@@ -1,4 +1,4 @@
-import aiohttp
+
 import os 
 from dotenv import load_dotenv
 from app.constants.prompts import analysis_prompt
