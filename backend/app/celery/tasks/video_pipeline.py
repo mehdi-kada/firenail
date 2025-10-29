@@ -8,6 +8,7 @@ from app.database.database import sessionLocal
 from app.models.jobs import Job, JobStatus
 from app.models.videos import Video
 from app.models.images import Image
+from app.models.profiles import Profile
 from app.constants.prompts import analysis_prompt, thumbnail_generation_prompt
 
 @celery_app.task(bind=True, name="process_video_pipeline", max_retries=3, default_retry_delay=60)
@@ -115,6 +116,18 @@ def process_video_pipeline(self, job_id: str):
                             storage_public_url=thumbnail_url,
                         )
                         session.add(generated_image)
+                        
+                        profile = session.get(Profile, job.user_id)
+                        if profile:
+                            subscription = profile.subscription
+                            if subscription and subscription.status in ["active", "cancelled"]:
+                                from datetime import datetime
+                                if subscription.status == "cancelled" and subscription.current_period_end < datetime.utcnow():
+                                    profile.images_generated += 1
+                                else:
+                                    subscription.images_generated += 1
+                            else:
+                                profile.images_generated += 1
                 
                 job.status = JobStatus.completed
                 try:

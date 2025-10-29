@@ -50,12 +50,26 @@ class SubscriptionService:
         )
         
         if existing:
+            period_changed = existing.current_period_start != subscription_data.current_period_start
+            
             for field, value in subscription_data.model_dump().items():
+                if field == "images_generated" and not period_changed:
+                    continue
+                if field == "period_reset_at" and not period_changed:
+                    continue
                 setattr(existing, field, value)
+            
+            if period_changed:
+                existing.images_generated = 0
+                existing.period_reset_at = subscription_data.current_period_start
+            
             existing.updated_at = datetime.utcnow()
             subscription = existing
         else:
-            subscription = Subscription(**subscription_data.model_dump())
+            subscription_dict = subscription_data.model_dump()
+            if subscription_dict.get("period_reset_at") is None:
+                subscription_dict["period_reset_at"] = subscription_data.current_period_start
+            subscription = Subscription(**subscription_dict)
             db.add(subscription)
         
         await db.commit()

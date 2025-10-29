@@ -7,10 +7,12 @@ from pydantic import UUID4, BaseModel, HttpUrl
 from fastapi import APIRouter, Depends, status, HTTPException
 
 from app.auth.validate import get_current_user_profile
+from app.auth.subscription_limits import check_image_generation_limit
 from app.database.database import AsyncSessionLocal
 from app.models.jobs import Job, JobStatus
 from app.models.profiles import Profile
 from app.services import events
+from app.services.subscription_services.limit_checker import LimitCheckResult
 from app.celery.tasks.video_pipeline import process_video_pipeline
 
 
@@ -70,6 +72,7 @@ async def _run_background(job_id: str, video_url: str):
 async def create_task(
     request: CreateTaskRequest,
     profile: Profile = Depends(get_current_user_profile),
+    limit_check: LimitCheckResult = Depends(check_image_generation_limit),
 ):
     job_id = uuid.uuid4()
     async with AsyncSessionLocal() as session:

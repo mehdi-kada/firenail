@@ -74,7 +74,9 @@ async def handle_order_paid(event, db: AsyncSession):
             current_period_start=subscription_data.current_period_start,
             current_period_end=subscription_data.current_period_end,
             cancel_at_period_end=subscription_data.cancel_at_period_end,
-            renews_at=subscription_data.current_period_end
+            renews_at=subscription_data.current_period_end,
+            images_generated=0,
+            period_reset_at=subscription_data.current_period_start
         )
         
         await SubscriptionService.upsert_subscription(subscription_create, db)
@@ -104,7 +106,9 @@ async def handle_subscription_created(event, db: AsyncSession):
             current_period_start=subscription_data.current_period_start,
             current_period_end=subscription_data.current_period_end,
             cancel_at_period_end=subscription_data.cancel_at_period_end,
-            renews_at=subscription_data.current_period_end
+            renews_at=subscription_data.current_period_end,
+            images_generated=0,
+            period_reset_at=subscription_data.current_period_start
         )
         
         await SubscriptionService.upsert_subscription(subscription_create, db)
@@ -134,7 +138,9 @@ async def handle_subscription_updated(event, db: AsyncSession):
             current_period_start=subscription_data.current_period_start,
             current_period_end=subscription_data.current_period_end,
             cancel_at_period_end=subscription_data.cancel_at_period_end,
-            renews_at=subscription_data.current_period_end
+            renews_at=subscription_data.current_period_end,
+            images_generated=0,
+            period_reset_at=subscription_data.current_period_start
         )
         
         await SubscriptionService.upsert_subscription(subscription_create, db)

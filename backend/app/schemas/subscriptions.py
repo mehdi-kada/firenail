@@ -17,7 +17,8 @@ class SubscriptionBase(BaseModel):
 
 
 class SubscriptionCreate(SubscriptionBase):
-    pass
+    images_generated: int = 0
+    period_reset_at: Optional[datetime] = None
 
 
 class SubscriptionUpdate(BaseModel):
