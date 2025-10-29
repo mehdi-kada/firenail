@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from typing import List, Optional, TYPE_CHECKING
-from sqlalchemy import ForeignKey, String, DateTime, Boolean, func
+from sqlalchemy import ForeignKey, String, DateTime, Boolean, Integer, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
@@ -26,6 +26,17 @@ class Profile(Base):
     username: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True)
     avatar_url: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_premium: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    
+    images_generated: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False
+    )
+    period_reset_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow
+    )
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), 

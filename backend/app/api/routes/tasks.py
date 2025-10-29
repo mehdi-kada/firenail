@@ -29,7 +29,6 @@ def enqueue_video_pipeline(job_id: str):
             }
         )
     except Exception as exc:
-        # This will now catch errors only after retries have failed
         print(f"CRITICAL: Failed to enqueue job {job_id} after multiple retries: {exc}")
 
 class CreateTaskRequest(BaseModel):

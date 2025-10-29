@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from typing import Optional, TYPE_CHECKING
-from sqlalchemy import ForeignKey, String, DateTime, Boolean, func
+from sqlalchemy import ForeignKey, String, DateTime, Boolean, Integer, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
@@ -78,6 +78,17 @@ class Subscription(Base):
     renews_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),
         nullable=True
+    )
+    
+    images_generated: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False
+    )
+    period_reset_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow
     )
     
     created_at: Mapped[datetime] = mapped_column(
