@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { PricingFooter } from "@/components/pricing/PricingFooter"
 import { PricingGrid, type PricingPlan } from "@/components/pricing/PricingGrid"
 import { PricingHero } from "@/components/pricing/PricingHero"
+import { SubscriptionStatus } from "@/components/subscription/SubscriptionStatus"
 import { useSubscription } from "@/hooks/useSubscription"
 import { subscriptionApi } from "@/lib/api/subscriptions"
 import { getPricingPlans } from "@/lib/constants/pricing"
@@ -65,19 +66,7 @@ export default function PricingPage() {
             description="Simple, transparent pricing. No hidden fees."
           />
 
-          {isPremium && subscription && (
-            <div className="mt-8 mx-auto max-w-2xl p-4 bg-primary/10 border border-primary rounded-lg text-center">
-              <p className="font-medium">
-                <strong>Current Plan:</strong> {subscription.plan_name}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {subscription.cancel_at_period_end 
-                  ? `Expires on ${new Date(subscription.current_period_end).toLocaleDateString()}`
-                  : `Renews on ${new Date(subscription.renews_at || subscription.current_period_end).toLocaleDateString()}`
-                }
-              </p>
-            </div>
-          )}
+          <SubscriptionStatus />
 
           <PricingGrid 
             plans={plans}
