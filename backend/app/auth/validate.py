@@ -5,6 +5,8 @@ import os
 from uuid import UUID
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+from sqlalchemy import select
 
 from app.database.database import get_db
 from app.models.profiles import Profile
@@ -63,14 +65,15 @@ async def get_current_user_profile(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid user id",
         )
-
-    profile = await db.get(Profile, user_uuid)
+    stmt = select(Profile).where(Profile.id == user_uuid).options(selectinload(Profile.subscription))
+    result = await db.execute(stmt)
+    profile = result.scalar_one_or_none()
 
     if not profile:
         profile = Profile(id=user_uuid)
         db.add(profile)
         await db.commit()
-        await db.refresh(profile)
+        await db.refresh(profile, ["subscription"])
 
     return profile
     

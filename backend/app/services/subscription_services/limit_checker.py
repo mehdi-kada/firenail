@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+from sqlalchemy import select
 from uuid import UUID
 
 from app.models.profiles import Profile
@@ -110,7 +112,10 @@ async def increment_image_count(
     Increment the image generation count for a user.
     Should be called after successful image generation.
     """
-    profile = await db.get(Profile, user_id)
+    stmt = select(Profile).where(Profile.id == user_id).options(selectinload(Profile.subscription))
+    result = await db.execute(stmt)
+    profile = result.scalar_one_or_none()
+    
     if not profile:
         return
     
