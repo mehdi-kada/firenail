@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from app.schemas.subscriptions import SubscriptionCreate
@@ -63,7 +63,7 @@ class SubscriptionService:
                 existing.images_generated = 0
                 existing.period_reset_at = subscription_data.current_period_start
             
-            existing.updated_at = datetime.utcnow()
+            existing.updated_at = datetime.now(timezone.utc)
             subscription = existing
         else:
             subscription_dict = subscription_data.model_dump()
@@ -115,7 +115,7 @@ class SubscriptionService:
         
         subscription.status = "cancelled"
         subscription.cancel_at_period_end = True
-        subscription.updated_at = datetime.utcnow()
+        subscription.updated_at = datetime.now(timezone.utc)
         
         await db.commit()
         return True
@@ -143,7 +143,7 @@ class SubscriptionService:
                 and_(
                     Subscription.user_id == user_id,
                     Subscription.status == "cancelled",
-                    Subscription.current_period_end > datetime.utcnow()
+                    Subscription.current_period_end > datetime.now(timezone.utc)
                 )
             )
         )

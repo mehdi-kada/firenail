@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -40,7 +40,7 @@ async def check_and_reset_limits(
     Raises UsageLimitExceeded if limit is exceeded.
     """
     subscription = profile.subscription
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     
     if subscription and subscription.status in ["active", "cancelled"]:
         if subscription.status == "cancelled" and subscription.current_period_end < now:
@@ -122,7 +122,7 @@ async def increment_image_count(
     subscription = profile.subscription
     
     if subscription and subscription.status in ["active", "cancelled"]:
-        if subscription.status == "cancelled" and subscription.current_period_end < datetime.utcnow():
+        if subscription.status == "cancelled" and subscription.current_period_end < datetime.now(timezone.utc):
             profile.images_generated += 1
         else:
             subscription.images_generated += 1

@@ -1,5 +1,6 @@
 
 from uuid import UUID
+from datetime import datetime, timezone
 from sqlalchemy import select
 from app.services import transcripts, analysis, events, crawl
 from app.services.image_generation import generate_thumbnail
@@ -121,8 +122,7 @@ def process_video_pipeline(self, job_id: str):
                         if profile:
                             subscription = profile.subscription
                             if subscription and subscription.status in ["active", "cancelled"]:
-                                from datetime import datetime
-                                if subscription.status == "cancelled" and subscription.current_period_end < datetime.utcnow():
+                                if subscription.status == "cancelled" and subscription.current_period_end < datetime.now(timezone.utc):
                                     profile.images_generated += 1
                                 else:
                                     subscription.images_generated += 1
