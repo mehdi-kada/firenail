@@ -6,7 +6,7 @@ interface GetPricingPlansParams {
     status: string
     plan_name: string
     current_period_end: string
-    renews_at?: string
+    renews_at?: string | null
     cancel_at_period_end: boolean
   } | null
 }
