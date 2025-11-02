@@ -16,21 +16,24 @@ load_dotenv()
     wait=wait_exponential(multiplier=2, min=1, max=8),
 )
 def analyze_transcript(prompt: str) -> Dict[str, Any]:
-    api_key = os.environ.get('GROQ_API_KEY')
+    api_key = os.environ.get('CEREBRAS_API_KEY')
     if not api_key:
-        raise ValueError("GROQ_API_KEY environment variable not set")
+        raise ValueError("CEREBRAS_API_KEY environment variable not set")
     
     response = httpx.post(
-        "https://api.groq.com/openai/v1/chat/completions",
+        "https://api.cerebras.ai/v1/chat/completions",
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         },
         json={
-            "model": "moonshotai/kimi-k2-instruct-0905",
+            "model": "qwen-3-235b-a22b-instruct-2507",
             "messages": [
                 {"role": "user", "content": prompt},
             ],
+            "max_tokens": 20000,
+            "temperature": 0.7,
+            "top_p": 0.8,
         },
         timeout=30,
     )
