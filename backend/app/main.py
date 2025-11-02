@@ -8,7 +8,11 @@ from app.auth.validate import get_current_user
 from app.api.routes import tasks, thumbnails
 from app.api.subscription import checkout, customer_portal, polar_hooks, status
 
-app = FastAPI()
+app = FastAPI(
+    swagger_ui_parameters={
+        "persistAuthorization": True,
+    }
+)
 
 main_app = app
 
