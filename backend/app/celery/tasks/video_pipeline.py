@@ -37,12 +37,12 @@ def process_video_pipeline(self, job_id: str):
     emit("job", "processing", {"video_url": video_url})
 
     try:
-        meta = transcripts.fetch_metadata(video_url)
-        emit("metadata", "completed", {"title": meta.title})
+        video_title = transcripts.fetch_metadata(video_url)
+        emit("metadata", "completed", {"title": video_title})
 
-        transcript_text = transcripts.fetch_transcript(meta.video_id)
+        transcript_text = transcripts.fetch_transcript(video_url)
         
-        prompt = analysis_prompt(transcript_text, meta.title)
+        prompt = analysis_prompt(transcript_text, video_title)
 
         analysis_result = analysis.analyze_transcript(prompt)
         summary = analysis_result.get("summary","")
@@ -64,7 +64,7 @@ def process_video_pipeline(self, job_id: str):
         thumbnail_url = None
         if len(image_urls) >= 1:
             thumbnail_prompt = thumbnail_generation_prompt(
-                video_title=meta.title,
+                video_title=video_title,
                 summary=summary,
                 keywords=keywords,
                 style_direction=style_direction
@@ -93,8 +93,7 @@ def process_video_pipeline(self, job_id: str):
                 if not existing_video:
                     video_record = Video(
                         job_id=job_uuid,
-                        youtube_id=meta.video_id,
-                        title=meta.title,
+                        title=video_title,
                         summary=summary
                     )
                     session.add(video_record)
@@ -111,7 +110,7 @@ def process_video_pipeline(self, job_id: str):
                         generated_image = Image(
                             job_id=job_uuid,
                             profile_id=job.user_id,
-                            video_title=meta.title,
+                            video_title=video_title,
                             keywords=keywords or ["thumbnail"],
                             firecrawl_payload=None,
                             storage_public_url=thumbnail_url,
