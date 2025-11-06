@@ -7,13 +7,12 @@ import Features from "@/components/landingPage/Features";
 
 export default function Home() {
   return (
-    <>
-    <LandingNav/>
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <Hero />
-      <Features />
-    </main>
-    </>
-    
+    <div className="min-h-screen bg-gradient-to-br from-background to-card">
+      <LandingNav/>
+      <main className="flex flex-col items-center justify-between">
+        <Hero />
+        <Features />
+      </main>
+    </div>
   );
 }

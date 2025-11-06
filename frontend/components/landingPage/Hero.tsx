@@ -1,118 +1,192 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 
 export default function Hero() {
+  const typedRef = useRef<HTMLSpanElement>(null);
   const [sliderPosition, setSliderPosition] = useState(50);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
-
-  const handleMouseDown = () => {
-    isDragging.current = true;
-  };
-
-  const handleMouseUp = () => {
-    isDragging.current = false;
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging.current || !containerRef.current) return;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = (x / rect.width) * 100;
-    setSliderPosition(Math.min(Math.max(percentage, 0), 100));
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.touches[0].clientX - rect.left;
-    const percentage = (x / rect.width) * 100;
-    setSliderPosition(Math.min(Math.max(percentage, 0), 100));
-  };
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      isDragging.current = false;
-    };
+    // Typing animation effect
+    if (typedRef.current) {
+      const phrases = [
+        'into Stunning Thumbnails',
+        'Analyzed by AI',
+        'to Professional Designs',
+        'in 3 Minutes'
+      ];
+      let phraseIndex = 0;
+      let charIndex = 0;
+      let isDeleting = false;
 
-    window.addEventListener("mouseup", handleGlobalMouseUp);
-    return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
+      const type = () => {
+        const currentPhrase = phrases[phraseIndex];
+        
+        if (!isDeleting && charIndex <= currentPhrase.length) {
+          if (typedRef.current) {
+            typedRef.current.textContent = currentPhrase.substring(0, charIndex);
+          }
+          charIndex++;
+          setTimeout(type, 100);
+        } else if (isDeleting && charIndex >= 0) {
+          if (typedRef.current) {
+            typedRef.current.textContent = currentPhrase.substring(0, charIndex);
+          }
+          charIndex--;
+          setTimeout(type, 50);
+        } else if (!isDeleting && charIndex > currentPhrase.length) {
+          setTimeout(() => {
+            isDeleting = true;
+            type();
+          }, 2000);
+        } else if (isDeleting && charIndex < 0) {
+          isDeleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          setTimeout(type, 500);
+        }
+      };
+
+      type();
+    }
   }, []);
 
+  const handleSliderMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging && e.type !== 'mousedown' && e.type !== 'touchstart') return;
+
+    const container = e.currentTarget.getBoundingClientRect();
+    let clientX: number;
+
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+    } else {
+      clientX = e.clientX;
+    }
+
+    const x = clientX - container.left;
+    const percentage = (x / container.width) * 100;
+    setSliderPosition(Math.min(Math.max(percentage, 0), 100));
+  };
+
   return (
-    <section className="grid grid-cols-1 items-center gap-12 md:grid-cols-2 md:gap-16">
-      {/* Left Content */}
-      <div className="flex flex-col items-start gap-6 text-left">
-        <h1 className="text-4xl font-bold leading-tight tracking-tighter sm:text-5xl md:text-6xl">
-          AI Thumbnails That Get Views.
-        </h1>
-        <h2 className="max-w-md text-base font-normal leading-normal text-muted-foreground sm:text-lg">
-          Instantly generate stunning YouTube thumbnails from your video content
-          and boost your engagement.
-        </h2>
-        <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 px-6 bg-primary text-primary-foreground text-base font-bold leading-normal tracking-wide transition-opacity hover:opacity-90">
-          <span className="truncate">Generate My Thumbnail Now</span>
-        </button>
-      </div>
+    <section className="relative min-h-screen flex items-center pt-16">
+      {/* Content */}
+      <div className="relative z-[2] w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Column - Text Content */}
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
+                  <span className="bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent">
+                    YouTube URLs
+                  </span>
+                  <br />
+                  <span ref={typedRef} className="text-foreground">
+                    into Stunning Thumbnails
+                  </span>
+                  <span className="inline-block w-0.5 h-12 lg:h-16 bg-primary ml-1 animate-pulse" />
+                </h1>
+                <p className="text-xl text-muted-foreground leading-relaxed">
+                  Firenail&apos;s AI analyzes your video&apos;s transcript, mines visual inspiration, 
+                  and generates on-brand thumbnails while you watch. No design skills required.
+                </p>
+              </div>
 
-      {/* Right Content - Image Slider */}
-      <div
-        ref={containerRef}
-        className="relative w-full aspect-[4/3] overflow-hidden rounded-xl border border-border select-none"
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchMove={handleTouchMove}
-      >
-        {/* Before Image (Background) */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB47y1ham7dJ4Iv3513Q89bFxtGAikj22afsUQDiWAtKwBv2xy-eQvU0vTChGOLpqslXPE1g5CoiksSdxhNnLvqWxIiXTLdmrVvbdrm7KDcDs_vOflmz-LKTTVtiTWNxR4DBFNd3E7GAmIPfOn5K2buqEc0kZOqSFv6-HsmbsiZ-mQIjJIQJIKu5Z4DScBlu9oCqyKLipa2jeijJAX88Nspl2RGMZ_mblw9FMSOGwzoGoM7Jq0hA1Izu3ws1q63DtcjeFeJzV950Kk")',
-          }}
-          aria-label="A dull, unedited frame from a video about cryptocurrency, showing a simple chart."
-        />
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:scale-105 hover:shadow-lg hover:shadow-primary/40">
+                  Generate Your First Thumbnail
+                </button>
+                <button className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:scale-105">
+                  View Demo
+                </button>
+              </div>
 
-        {/* After Image (Overlay) */}
-        <div
-          className="absolute inset-0 overflow-hidden"
-          style={{ width: `${sliderPosition}%` }}
-        >
-          <div
-            className="absolute inset-0 h-full w-full bg-cover bg-center"
-            style={{
-              backgroundImage:
-                'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAg5aFMbn9EynsnHbnUEutMCPTst12cn2neMM2kAshg2gqRX0hbwMQvD74VQZBu4NNmnviCkI5G6RhaR8JNjJoHhzyGnHnb1bkIZSMHDjDtmymEkh7ZdlFF93Mys3yDwsA59nQ6C4nDTZnT2KZrbWrfkgSnjh4_cs2c7cdJ0cJJSBd_R_bQqPimF090sh13_0jENc72GKs_xeUzNNXGWTXhkcjIRtLwUtSb5n4f57UzrZISVQ1kgP16GcBYqcU0z1PLeGOxxwcM1Jg")',
-              width: `${(100 / sliderPosition) * 100}%`,
-            }}
-            aria-label="A vibrant, attention-grabbing YouTube thumbnail for a cryptocurrency video, with bold text and graphics, generated by Firenail."
-          />
+              {/* Tech Badge */}
+              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                <span className="flex items-center space-x-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span>Built with Next.js 15, FastAPI & Groq AI</span>
+                </span>
+              </div>
+            </div>
 
-          {/* Slider Handle */}
-          <div
-            className="absolute bottom-0 right-0 top-0 w-1 cursor-ew-resize bg-primary/50"
-            onMouseDown={handleMouseDown}
-            onTouchStart={handleMouseDown}
-          >
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary p-1 text-primary-foreground">
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+            {/* Right Column - Before/After Slider */}
+            <div className="relative space-y-4">
+              {/* Before/After Slider */}
+              <div 
+                className="relative rounded-lg overflow-hidden shadow-2xl cursor-ew-resize select-none"
+                onMouseDown={(e) => {
+                  setIsDragging(true);
+                  handleSliderMove(e);
+                }}
+                onMouseMove={handleSliderMove}
+                onMouseUp={() => setIsDragging(false)}
+                onMouseLeave={() => setIsDragging(false)}
+                onTouchStart={(e) => {
+                  setIsDragging(true);
+                  handleSliderMove(e);
+                }}
+                onTouchMove={handleSliderMove}
+                onTouchEnd={() => setIsDragging(false)}
               >
-                <path
-                  d="M8 9l4-4 4 4m0 6l-4 4-4-4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+                {/* Before Image (Background) */}
+                <div className="relative w-full aspect-video">
+                  <Image
+                    src="/resources/before-thumbnail.png"
+                    alt="Before - Manual Thumbnail Creation"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                  <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-md text-sm font-semibold">
+                    BEFORE
+                  </div>
+                </div>
+
+                {/* After Image (Overlay with clip) */}
+                <div 
+                  className="absolute inset-0"
+                  style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
+                >
+                  <Image
+                    src="/resources/after-thumbnail.png"
+                    alt="After - AI Generated Thumbnail"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                  <div className="absolute top-4 right-4 bg-primary/90 text-white px-3 py-1 rounded-md text-sm font-semibold">
+                    AFTER
+                  </div>
+                </div>
+
+                {/* Slider Line */}
+                <div 
+                  className="absolute inset-y-0 w-1 bg-white shadow-lg"
+                  style={{ left: `${sliderPosition}%` }}
+                >
+                  {/* Slider Handle */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center">
+                    <div className="flex gap-1">
+                      <div className="w-0.5 h-6 bg-gray-400"></div>
+                      <div className="w-0.5 h-6 bg-gray-400"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Title Placeholder */}
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-foreground">
+                  Transform Your Content in Seconds
+                </h3>
+                <p className="text-muted-foreground mt-2">
+                  Drag the slider to see the difference
+                </p>
+              </div>
             </div>
           </div>
         </div>
