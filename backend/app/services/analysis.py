@@ -68,6 +68,5 @@ def analyze_transcript(prompt: str) -> Dict[str, Any]:
 
     summary = parsed_data.get('summary', '')
     image_search_keywords = parsed_data.get('image_search_keywords', [])
-    style_direction = parsed_data.get('style_direction', '')
 
-    return {"summary": summary, "image_search_keywords": image_search_keywords, "style_direction": style_direction}
+    return {"summary": summary, "image_search_keywords": image_search_keywords}

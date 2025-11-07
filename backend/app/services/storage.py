@@ -41,7 +41,7 @@ def     upload_thumbnail(job_id: str, image_bytes: bytes):
         display_path,
         thumbnail_bytes,
         {
-            "content-type": "image/webp",
+            "content-type": "image/png",
             'cache-control': 'public, max-age=31536000'
         }
     )
