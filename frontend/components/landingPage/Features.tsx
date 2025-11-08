@@ -1,3 +1,7 @@
+'use client';
+
+import AnimatedBackground from '@/components/ui/AnimatedBackground';
+
 export default function Features() {
   const features = [
     {
@@ -27,9 +31,16 @@ export default function Features() {
   ];
 
   return (
-    <section className="py-16 sm:py-24 space-y-12">
-      {/* Section Header */}
-      <div className="text-center px-4">
+    <section className="relative py-16 sm:py-24 space-y-12 overflow-hidden">
+      {/* Animated Background - Only upper portion with fade */}
+      <div className="absolute top-0 left-0 right-0 h-1/3 z-[1]">
+        <AnimatedBackground fadeInTop={true} />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-[2]">
+        {/* Section Header */}
+        <div className="text-center px-4">
         <h2 className="text-foreground text-3xl sm:text-4xl font-bold leading-tight tracking-tight">
           Features That Drive Clicks
         </h2>
@@ -55,6 +66,7 @@ export default function Features() {
             <p className="text-muted-foreground">{feature.description}</p>
           </div>
         ))}
+      </div>
       </div>
     </section>
   );

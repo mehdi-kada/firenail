@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import AnimatedBackground from '@/components/ui/AnimatedBackground';
 
 export default function Hero() {
   const typedRef = useRef<HTMLSpanElement>(null);
@@ -70,7 +71,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center pt-16">
+    <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
       {/* Content */}
       <div className="relative z-[2] w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -104,13 +105,7 @@ export default function Hero() {
                 </button>
               </div>
 
-              {/* Tech Badge */}
-              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                <span className="flex items-center space-x-2">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span>Built with Next.js 15, FastAPI & Groq AI</span>
-                </span>
-              </div>
+
             </div>
 
             {/* Right Column - Before/After Slider */}
@@ -190,6 +185,11 @@ export default function Hero() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Animated Background - Full hero section */}
+      <div className="absolute inset-0 z-[1]">
+        <AnimatedBackground />
       </div>
     </section>
   );
