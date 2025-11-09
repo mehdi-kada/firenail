@@ -98,22 +98,23 @@ export function MainNav() {
 					<span className="hidden sm:inline-flex text-lg font-semibold">ThumbnailAI</span>
 				</Link>
 
-				<nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-					{navLinks.map((link) => (
-						<Link
-							key={link.href}
-							href={link.href}
-							className={cn(
-								"transition-colors text-foreground/70 hover:text-primary",
-								pathname.startsWith(link.href) && "text-primary"
-							)}
-						>
-							{link.label}
-						</Link>
-					))}
-				</nav>
+				<div className="flex items-center gap-6">
+					<nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+						{navLinks.map((link) => (
+							<Link
+								key={link.href}
+								href={link.href}
+								className={cn(
+									"transition-colors text-foreground/70 hover:text-primary",
+									pathname.startsWith(link.href) && "text-primary"
+								)}
+							>
+								{link.label}
+							</Link>
+						))}
+					</nav>
 
-				<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2">
 					<Button
 						variant="ghost"
 						size="icon"
@@ -177,6 +178,7 @@ export function MainNav() {
 							</div>
 						</div>
 					</div>
+				</div>
 				</div>
 			</div>
 
