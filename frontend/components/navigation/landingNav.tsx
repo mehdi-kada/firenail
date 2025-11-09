@@ -34,13 +34,14 @@ export function LandingNav({ className }: LandingNavProps) {
 		return () => subscription.unsubscribe()
 	}, [])
 	return (
-		<header
-			className={cn(
-				"sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-				className,
-			)}
-		>
-			<nav className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+		<header className="sticky top-0 z-40 w-full p-4 sm:p-6">
+			<div
+				className={cn(
+					"mx-auto flex h-16 w-full max-w-6xl items-center justify-between rounded-lg border border-border/60 bg-background/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6 lg:px-8",
+					className,
+				)}
+			>
+				<nav className="flex w-full items-center justify-between">
 				<Link
 					href="/"
 					className="flex items-center gap-2 text-base font-semibold text-foreground transition-colors hover:text-primary"
@@ -70,6 +71,7 @@ export function LandingNav({ className }: LandingNavProps) {
 					)}
 				</div>
 			</nav>
+			</div>
 		</header>
 	)
 }

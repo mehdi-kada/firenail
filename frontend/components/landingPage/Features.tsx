@@ -51,7 +51,7 @@ export default function Features() {
       </div>
 
       {/* Features Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-4 mt-12">
         {features.map((feature, index) => (
           <div
             key={index}

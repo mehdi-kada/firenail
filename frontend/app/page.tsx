@@ -6,16 +6,18 @@ import { Feather } from "lucide-react";
 import Features from "@/components/landingPage/Features";
 import HowItWorks from "@/components/landingPage/HowItWorks";
 import Pricing from "@/components/landingPage/Pricing";
+import CTA from "@/components/landingPage/CTA";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-card">
+    <div className="min-h-screen ">
       <LandingNav/>
-      <main className="flex flex-col items-center justify-between">
+      <main className="flex flex-col items-center gap-0 -mt-10">
         <Hero />
         <Features />
         <HowItWorks />
         <Pricing />
+        <CTA />
       </main>
     </div>
   );
