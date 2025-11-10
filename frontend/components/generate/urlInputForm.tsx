@@ -22,17 +22,29 @@ export function UrlInputForm({ className, onTaskCreated, isGenerating = false, .
 
   const validateUrl = (value: string) => {
     if (!value.trim()) {
-      return 'Please paste a URL before submitting.'
+      return 'Please paste a YouTube URL to get started.'
     }
 
+    // Basic URL validation
     try {
       const parsed = new URL(value.trim())
       if (!['http:', 'https:'].includes(parsed.protocol)) {
         return 'Only HTTP and HTTPS URLs are supported.'
       }
+      
+      const hostname = parsed.hostname.toLowerCase()
+      const isYouTube = hostname === 'youtube.com' || 
+                        hostname === 'www.youtube.com' || 
+                        hostname === 'youtu.be' || 
+                        hostname === 'www.youtu.be'
+      
+      if (!isYouTube) {
+        return 'Please provide a valid YouTube URL (youtube.com or youtu.be).'
+      }
+      
       return null
     } catch (err) {
-      return 'Make sure the link is a valid URL.'
+      return 'Please enter a valid YouTube URL.'
     }
   }
 
@@ -53,11 +65,23 @@ export function UrlInputForm({ className, onTaskCreated, isGenerating = false, .
     try {
       const response = await api.post(TASKS_ENDPOINT, { url: normalizedUrl })
       const data = response.data
+      setUrl('')
       onTaskCreated?.(data.task_id)
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        const message = err.response?.data?.message ?? err.response?.data?.detail
-        setError(message ?? 'We could not reach the generator. Please try again.')
+        const errorData = err.response?.data
+        
+        if (errorData?.detail && Array.isArray(errorData.detail)) {
+          const firstError = errorData.detail[0]
+          if (firstError?.msg) {
+            setError(firstError.msg)
+          } else {
+            setError('Invalid YouTube URL. Please check and try again.')
+          }
+        } else {
+          const message = errorData?.message ?? errorData?.detail
+          setError(message ?? 'Unable to process your request. Please try again.')
+        }
       } else {
         setError('Something went wrong. Please try again.')
       }

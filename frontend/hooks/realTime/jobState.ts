@@ -2,16 +2,20 @@ import { useMemo } from "react"
 import { JobEvent } from "./JobEvents"
 
 
-function formatStepName(step: string): string {
+function formatStepName(step: string, status?: string): string {
   const stepNames: Record<string, string> = {
-    job: "Queued",
-    metadata: "Fetching Video Info",
-    analysis: "Analyzing Content",
-    thumbnail: "Generating Thumbnail",
+    job: "Starting",
+    metadata: "Getting video info",
+    transcript: "Loading captions",
+    analysis: "Analyzing content",
+    images: "Finding images",
+    thumbnail: "Creating thumbnail",
     done: "Complete",
     error: "Error"
   }
-  return stepNames[step] || step.charAt(0).toUpperCase() + step.slice(1)
+  
+  const statusSuffix = status === "started" ? "..." : ""
+  return (stepNames[step] || step.charAt(0).toUpperCase() + step.slice(1)) + statusSuffix
 }
 
 
@@ -40,7 +44,7 @@ export const useJobState = (events: JobEvent[]) => {
   const currentStep = useMemo(() => {
     if (!events.length) return null
     const lastEvent = events[events.length - 1]
-    return formatStepName(lastEvent.step)
+    return formatStepName(lastEvent.step, lastEvent.status)
   }, [events])
 
   const activeStepKey = useMemo(() => {
@@ -51,19 +55,31 @@ export const useJobState = (events: JobEvent[]) => {
   const errorEvent = useMemo(() => {
     if (!events.length) return null
     const latest = [...events].reverse()
-    return latest.find((event) => event.step === "error" || event.status === "failed" || event.status === "error") ?? null
+    return latest.find((event) => 
+      event.step === "error" || 
+      event.status === "failed" || 
+      event.status === "error"
+    ) ?? null
   }, [events])
 
   const jobError = useMemo(() => {
     if (!errorEvent) return null
     const payload = errorEvent.payload ?? {}
-    const message = typeof payload["message"] === "string" ? (payload["message"] as string) : undefined
-    const reason = typeof payload["reason"] === "string" ? (payload["reason"] as string) : undefined
-    return message ?? reason ?? "The job failed unexpectedly."
+    
+    // Check for user_message first
+    const userMessage = typeof payload["user_message"] === "string" ? payload["user_message"] : undefined
+    if (userMessage) return userMessage
+    
+    // Fallback to technical message
+    const message = typeof payload["message"] === "string" ? payload["message"] : undefined
+    const reason = typeof payload["reason"] === "string" ? payload["reason"] : undefined
+    const error = typeof payload["error"] === "string" ? payload["error"] : undefined
+    
+    return userMessage ?? message ?? reason ?? error ?? "Something went wrong. Please try again."
   }, [errorEvent])
 
   const timelineSteps = useMemo(() => {
-    const ordered = ["metadata", "analysis", "thumbnail", "done"]
+    const ordered = ["metadata", "transcript", "analysis", "images", "thumbnail", "done"]
     const latestByStep = [...events].reverse()
 
     return ordered.map((step) => {
@@ -76,7 +92,7 @@ export const useJobState = (events: JobEvent[]) => {
 
       return {
         step,
-        label: formatStepName(step),
+        label: formatStepName(step, status),
         status,
       }
     })

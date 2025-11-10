@@ -11,11 +11,12 @@ type JobRealtimeProps = {
   jobId?: string
   onJobComplete?: () => void
   onJobError?: () => void
+  hasTimedOut?: boolean
 }
 
 
 
-export function JobRealtime({ jobId, onJobComplete, onJobError }: JobRealtimeProps) {
+export function JobRealtime({ jobId, onJobComplete, onJobError, hasTimedOut }: JobRealtimeProps) {
 
   const { events, isLoading, error } = useJobEvents(jobId)
 
@@ -65,6 +66,17 @@ export function JobRealtime({ jobId, onJobComplete, onJobError }: JobRealtimePro
     return (
       <div className="mt-8 text-center">
         <p className="text-sm text-destructive">{error}</p>
+      </div>
+    )
+  }
+
+  if (hasTimedOut && !isCompleted && !hasError) {
+    return (
+      <div className="mt-8 text-center">
+        <div className="mb-6 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+          <p className="font-semibold mb-2">Request Timed Out</p>
+          <p>Your thumbnail generation is taking longer than expected. This might be due to high server load or a complex video. Please try again with a different video or wait a few minutes.</p>
+        </div>
       </div>
     )
   }
