@@ -1,8 +1,9 @@
 import asyncio
 import uuid
+import re
 from datetime import UTC, datetime
 
-from pydantic import UUID4, BaseModel, HttpUrl
+from pydantic import UUID4, BaseModel, HttpUrl, field_validator
 
 from fastapi import APIRouter, Depends, status, HTTPException
 
@@ -14,6 +15,19 @@ from app.models.profiles import Profile
 from app.services import events
 from app.services.subscription_services.limit_checker import LimitCheckResult
 from app.celery.tasks.video_pipeline import process_video_pipeline
+
+
+def validate_youtube_url(url: str) -> bool:
+    """Validate if the URL is a valid YouTube URL"""
+    youtube_patterns = [
+        r'^https?://(www\.)?youtube\.com/watch\?v=[\w-]+',
+        r'^https?://(www\.)?youtu\.be/[\w-]+',
+        r'^https?://(www\.)?youtube\.com/embed/[\w-]+',
+        r'^https?://(www\.)?youtube\.com/v/[\w-]+',
+    ]
+    
+    url_str = str(url)
+    return any(re.match(pattern, url_str) for pattern in youtube_patterns)
 
 
 def enqueue_video_pipeline(job_id: str):
@@ -35,6 +49,13 @@ def enqueue_video_pipeline(job_id: str):
 
 class CreateTaskRequest(BaseModel):
     url: HttpUrl
+    
+    @field_validator('url')
+    @classmethod
+    def validate_youtube_url_field(cls, v):
+        if not validate_youtube_url(str(v)):
+            raise ValueError('Please provide a valid YouTube URL (e.g., youtube.com/watch?v=... or youtu.be/...)')
+        return v
 
 class TaskResponse(BaseModel):
     task_id: UUID4
@@ -96,9 +117,7 @@ async def create_task(
 
     job_id_str = str(job_id)
     
-    # Create background task with proper exception handling
     task = asyncio.create_task(_run_background(job_id_str, str(request.url)))
-    # Add done callback to log any unhandled exceptions
     task.add_done_callback(lambda t: t.exception() if not t.cancelled() else None)
     
     print(f"Queued job {job_id} for video URL {request.url}")
