@@ -2,12 +2,16 @@
 
 import { useState } from 'react';
 import { Link as LinkIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
 
 export default function CTA() {
   const [videoUrl, setVideoUrl] = useState('');
+  const router = useRouter()
 
   const handleGenerate = () => {
-    // TODO: Implement navigation to generation page with video URL
+    const encodedUrl = encodeURIComponent(videoUrl.trim());
+    router.push(`/generate?videoUrl=${encodedUrl}`);
     console.log('Generating thumbnail for:', videoUrl);
   };
 

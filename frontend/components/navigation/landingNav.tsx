@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
@@ -47,11 +48,14 @@ export function LandingNav({ className }: LandingNavProps) {
 					className="flex items-center gap-2 text-base font-semibold text-foreground transition-colors hover:text-primary"
 					aria-label="ThumbnailAI home"
 				>
-					<img
-						src="/ChatGPT-Image-Sep-24_-2025_-08_56_24-PM.svg"
-						alt="ThumbnailAI Logo"
-						className="h-15 w-auto"
-					/>
+				<Image
+					src="/ChatGPT-Image-Sep-24_-2025_-08_56_24-PM.svg"
+					alt="ThumbnailAI Logo"
+					width={55}
+					height={55}
+					className="h-15"
+					priority
+				/>
 				</Link>
 
 				<div className="flex items-center gap-2 sm:gap-3">

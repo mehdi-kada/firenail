@@ -55,7 +55,7 @@ export default function Features() {
         {features.map((feature, index) => (
           <div
             key={index}
-            className="p-6 bg-card rounded-lg border border-border"
+            className="p-6 bg-card rounded-lg border border-border transition-all duration-300 hover:border-primary hover:shadow-lg hover:shadow-primary/20 cursor-pointer"
           >
             <span className="material-symbols-outlined text-primary !text-3xl mb-3">
               {feature.icon}

@@ -130,7 +130,7 @@ export default function Hero() {
                 {/* Before Image (Background) */}
                 <div className="relative w-full aspect-video">
                   <Image
-                    src="/resources/before-thumbnail.png"
+                    src="/public/before-thumbnail.png"
                     alt="Before - Manual Thumbnail Creation"
                     fill
                     className="object-cover"

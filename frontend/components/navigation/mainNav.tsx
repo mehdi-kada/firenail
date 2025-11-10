@@ -24,9 +24,6 @@ const navLinks: NavLink[] = [
 export function MainNav() {
 	const pathname = usePathname()
 	const [mobileOpen, setMobileOpen] = useState(false)
-	const [menuOpen, setMenuOpen] = useState(false)
-	const menuRef = useRef<HTMLDivElement | null>(null)
-	const buttonRef = useRef<HTMLButtonElement | null>(null)
 	const [userInitials, setUserInitials] = useState<string>("TG")
 
 	useEffect(() => {
@@ -55,50 +52,28 @@ export function MainNav() {
 
 	useEffect(() => {
 		setMobileOpen(false)
-		setMenuOpen(false)
 	}, [pathname])
-
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			const target = event.target as Node
-
-			if (
-				menuRef.current &&
-				!menuRef.current.contains(target) &&
-				buttonRef.current &&
-				!buttonRef.current.contains(target)
-			) {
-				setMenuOpen(false)
-			}
-		}
-
-		document.addEventListener("mousedown", handleClickOutside)
-
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside)
-		}
-	}, [])
 
 	return (
 		<header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 			<div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-				<Link
-					href="/"
-					className="flex items-center gap-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
-					aria-label="ThumbnailAI thumbnails"
-				>
-					<Image
-						src="/ChatGPT-Image-Sep-24_-2025_-08_56_24-PM.svg"
-						alt="ThumbnailAI Logo"
-						width={40}
-						height={40}
-						className="h-10 w-auto"
-						priority
-					/>
-					<span className="hidden sm:inline-flex text-lg font-semibold">ThumbnailAI</span>
-				</Link>
+				<div className="flex items-center gap-10">
+					<Link
+						href="/"
+						className="flex items-center gap-3 text-base font-semibold text-foreground transition-colors hover:text-primary"
+						aria-label="ThumbnailAI thumbnails"
+					>
+						<Image
+							src="/ChatGPT-Image-Sep-24_-2025_-08_56_24-PM.svg"
+							alt="ThumbnailAI Logo"
+							width={55}
+							height={55}
+							className="h-15"
+							priority
+						/>
+						<span className="hidden sm:inline-flex text-lg font-semibold">Firenail</span>
+					</Link>
 
-				<div className="flex items-center gap-6">
 					<nav className="hidden md:flex items-center gap-6 text-sm font-medium">
 						{navLinks.map((link) => (
 							<Link
@@ -113,8 +88,9 @@ export function MainNav() {
 							</Link>
 						))}
 					</nav>
+				</div>
 
-					<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2">
 					<Button
 						variant="ghost"
 						size="icon"
@@ -139,46 +115,12 @@ export function MainNav() {
 						</svg>
 					</Button>
 
-					<div className="relative">
-						<button
-							ref={buttonRef}
-							onClick={() => setMenuOpen((prev) => !prev)}
-							className="flex size-10 items-center justify-center rounded-full border border-border bg-card text-sm font-semibold text-foreground transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-							aria-haspopup="true"
-							aria-expanded={menuOpen}
-						>
+					<div className="flex items-center gap-3">
+						<button className="flex size-10 items-center justify-center rounded-full border border-border bg-card text-sm font-semibold text-foreground transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background">
 							<span className="select-none">{userInitials}</span>
 						</button>
-
-						<div
-							ref={menuRef}
-							className={cn(
-								"absolute right-0 mt-2 w-48 overflow-hidden rounded-lg border border-border bg-card shadow-lg transition data-[state=closed]:pointer-events-none data-[state=closed]:opacity-0 data-[state=closed]:translate-y-1",
-								menuOpen ? "data-[state=open]" : "data-[state=closed]"
-							)}
-							data-state={menuOpen ? "open" : "closed"}
-						>
-							<div className="py-1 text-sm text-foreground/80">
-								<Link
-									href="#"
-									className="block px-4 py-2 transition-colors hover:bg-background/80 hover:text-primary"
-								>
-									Profile
-								</Link>
-								<Link
-									href="#"
-									className="block px-4 py-2 transition-colors hover:bg-background/80 hover:text-primary"
-								>
-									Settings
-								</Link>
-								<div className="border-t border-border/60" />
-								<div className="px-4 py-2">
-									<LogoutButton />
-								</div>
-							</div>
-						</div>
+						<LogoutButton />
 					</div>
-				</div>
 				</div>
 			</div>
 
