@@ -1,7 +1,9 @@
 from uuid import UUID
 from datetime import datetime, timezone
 from sqlalchemy import select
+from requests.exceptions import RequestException, HTTPError, Timeout
 from app.services import transcripts, analysis, events, crawl
+from app.services.transcripts import VideoUnavailableError, TranscriptUnavailableError, InvalidURLError
 from app.services.image_generation import generate_thumbnail
 from app.celery.celery_app import celery_app
 from app.database.database import sessionLocal
@@ -10,9 +12,50 @@ from app.models.videos import Video
 from app.models.images import Image
 from app.models.profiles import Profile
 from app.constants.prompts import analysis_prompt, thumbnail_generation_prompt
+from app.constants.user_messages import ERROR_MESSAGES, SUCCESS_MESSAGES
 
-@celery_app.task(bind=True, name="process_video_pipeline", max_retries=3, default_retry_delay=60)
+def _get_user_friendly_error(exc: Exception) -> str:
+    """Convert technical exceptions to user-friendly messages"""
+    
+    # Check for custom exceptions first
+    if isinstance(exc, VideoUnavailableError):
+        return ERROR_MESSAGES["video_unavailable"]
+    elif isinstance(exc, TranscriptUnavailableError):
+        return ERROR_MESSAGES["no_transcript"]
+    elif isinstance(exc, InvalidURLError):
+        return ERROR_MESSAGES["invalid_url"]
+    
+    # Check error string patterns
+    error_str = str(exc).lower()
+    
+    if "transcript" in error_str and "disabled" in error_str:
+        return ERROR_MESSAGES["transcript_disabled"]
+    elif "no transcript" in error_str or "captions" in error_str:
+        return ERROR_MESSAGES["no_transcript"]
+    elif "age" in error_str and "restricted" in error_str:
+        return ERROR_MESSAGES["age_restricted"]
+    elif "unavailable" in error_str or "private" in error_str:
+        return ERROR_MESSAGES["video_unavailable"]
+    elif "not found" in error_str or "404" in error_str:
+        return ERROR_MESSAGES["video_not_found"]
+    elif "invalid" in error_str and "url" in error_str:
+        return ERROR_MESSAGES["invalid_url"]
+    elif "timeout" in error_str or "timed out" in error_str:
+        return ERROR_MESSAGES["thumbnail_generation_timeout"]
+    elif "rate" in error_str and "limit" in error_str:
+        return ERROR_MESSAGES["rate_limit"]
+    elif "api" in error_str or isinstance(exc, (RequestException, HTTPError)):
+        return ERROR_MESSAGES["api_error"]
+    else:
+        return ERROR_MESSAGES["unknown_error"]
+
+
+@celery_app.task(bind=True, name="process_video_pipeline", max_retries=2, default_retry_delay=60, time_limit=600, soft_time_limit=540)
 def process_video_pipeline(self, job_id: str):
+    """
+    Process video pipeline with comprehensive error handling and user feedback
+    Time limits: 600s hard limit, 540s soft limit for graceful shutdown
+    """
     job_uuid = UUID(job_id)
 
     with sessionLocal() as session:
@@ -27,38 +70,99 @@ def process_video_pipeline(self, job_id: str):
             raise
         video_url = job.video_url
 
-    def emit(step_name: str, status: str, payload: dict | None = None):
+    def emit(step_name: str, status: str, payload: dict | None = None, user_message: str | None = None):
+        """Emit event with optional user-friendly message"""
         try:
-            events.record_event(job_uuid, step=step_name, status=status, payload=payload)
+            event_payload = payload or {}
+            if user_message:
+                event_payload["user_message"] = user_message
+            events.record_event(job_uuid, step=step_name, status=status, payload=event_payload)
         except Exception as exc:
             print(f"Failed to record event for job {job_uuid} ({step_name}:{status}): {exc}")
 
-    emit("job", "processing", {"video_url": video_url})
+    emit("job", "processing", {"video_url": video_url}, SUCCESS_MESSAGES["queued"])
 
     try:
-        video_title = transcripts.fetch_metadata(video_url)
-        emit("metadata", "completed", {"title": video_title})
+        # Step 1: Fetch video metadata
+        emit("metadata", "started", user_message="Fetching video information...")
+        try:
+            video_title = transcripts.fetch_metadata(video_url)
+            emit("metadata", "completed", {"title": video_title}, SUCCESS_MESSAGES["metadata_fetched"])
+        except Exception as exc:
+            user_error = _get_user_friendly_error(exc)
+            emit("metadata", "failed", {"error": str(exc)}, user_error)
+            raise ValueError(user_error) from exc
 
-        transcript_text = transcripts.fetch_transcript(video_url)
+        # Step 2: Fetch transcript
+        emit("transcript", "started", user_message="Loading video captions...")
+        try:
+            transcript_text = transcripts.fetch_transcript(video_url)
+            if not transcript_text or len(transcript_text.strip()) < 50:
+                user_error = ERROR_MESSAGES["no_transcript"]
+                emit("transcript", "failed", {"error": "Transcript too short"}, user_error)
+                raise ValueError(user_error)
+            emit("transcript", "completed", {"length": len(transcript_text)}, SUCCESS_MESSAGES["transcript_fetched"])
+        except Exception as exc:
+            user_error = _get_user_friendly_error(exc)
+            emit("transcript", "failed", {"error": str(exc)}, user_error)
+            raise ValueError(user_error) from exc
         
-        prompt = analysis_prompt(transcript_text, video_title)
+        # Step 3: Analyze content
+        emit("analysis", "started", user_message="Analyzing video content...")
+        try:
+            prompt = analysis_prompt(transcript_text, video_title)
+            analysis_result = analysis.analyze_transcript(prompt)
+            summary = analysis_result.get("summary", "")
+            keywords = analysis_result.get("image_search_keywords", [])
+            
+            if not keywords or len(keywords) == 0:
+                user_error = ERROR_MESSAGES["no_keywords"]
+                emit("analysis", "failed", {"error": "No keywords extracted"}, user_error)
+                raise ValueError(user_error)
+                
+            emit("analysis", "completed", {
+                "summary": summary[:170],
+                "keywords": keywords
+            }, SUCCESS_MESSAGES["analysis_completed"])
+        except Exception as exc:
+            user_error = _get_user_friendly_error(exc) if not isinstance(exc, ValueError) else str(exc)
+            emit("analysis", "failed", {"error": str(exc)}, user_error)
+            raise ValueError(user_error) from exc
 
-        analysis_result = analysis.analyze_transcript(prompt)
-        summary = analysis_result.get("summary","")
-        keywords = analysis_result.get("image_search_keywords",[])
-        emit("analysis", "completed", {"summary": summary[:170],"keywords":keywords})
-
+        # Step 4: Search for reference images
+        emit("images", "started", user_message="Finding reference images...")
         image_urls = []
-        for keyword in keywords:
-            images = crawl.crawl_images(keyword, limit=1)
-            if images and len(images) > 0:
-                image_data = images[0]
-                image_url = image_data.get("imageUrl")
-                if image_url:
-                    image_urls.append({"keyword": keyword, "url": image_url})
-            else:
-                print(f"No images found for keyword: {keyword}")
+        failed_keywords = []
+        
+        for keyword in keywords[:2]:  # Limit to 2-3 keywords to avoid AI not following instructions
+            try:
+                images = crawl.crawl_images(keyword, limit=1)
+                if images and len(images) > 0:
+                    image_data = images[0]
+                    image_url = image_data.get("imageUrl")
+                    if image_url:
+                        image_urls.append({"keyword": keyword, "url": image_url})
+                else:
+                    failed_keywords.append(keyword)
+                    print(f"No images found for keyword: {keyword}")
+            except Exception as exc:
+                failed_keywords.append(keyword)
+                print(f"Error searching images for '{keyword}': {exc}")
+        
+        if len(image_urls) == 0:
+            user_error = ERROR_MESSAGES["image_search_failed"]
+            emit("images", "failed", {
+                "error": "No images found",
+                "failed_keywords": failed_keywords
+            }, user_error)
+            raise ValueError(user_error)
+        
+        emit("images", "completed", {
+            "count": len(image_urls),
+            "found_for": [img["keyword"] for img in image_urls]
+        }, SUCCESS_MESSAGES["images_found"])
 
+        # Step 5: Generate thumbnail
         thumbnail_url = None
         if len(image_urls) >= 1:
             thumbnail_prompt = thumbnail_generation_prompt(
@@ -67,20 +171,30 @@ def process_video_pipeline(self, job_id: str):
                 keywords=keywords,
             )
             try:
-                emit("thumbnail", "started")
+                emit("thumbnail", "started", user_message=SUCCESS_MESSAGES["thumbnail_started"])
                 thumbnail_url = generate_thumbnail(
                     job_id=str(job_uuid),
                     prompt=thumbnail_prompt,
                     reference_image_urls=[p["url"] for p in image_urls[:3]]
                 )
-                emit("thumbnail", "completed", {"url": thumbnail_url})
+                emit("thumbnail", "completed", {"url": thumbnail_url}, SUCCESS_MESSAGES["thumbnail_completed"])
             except ValueError as e:
-                print(f"Skipping thumbnail generation: {e}")
-                emit("thumbnail", "skipped", {"reason": str(e)})
+                user_error = str(e) if "valid" in str(e).lower() else ERROR_MESSAGES["thumbnail_generation_failed"]
+                print(f"Thumbnail generation validation error: {e}")
+                emit("thumbnail", "failed", {"error": str(e)}, user_error)
+                raise ValueError(user_error) from e
+            except Timeout as e:
+                user_error = ERROR_MESSAGES["thumbnail_generation_timeout"]
+                print(f"Thumbnail generation timeout: {e}")
+                emit("thumbnail", "failed", {"error": "Timeout"}, user_error)
+                raise ValueError(user_error) from e
             except Exception as e:
+                user_error = _get_user_friendly_error(e)
                 print(f"Thumbnail generation failed: {e}")
-                emit("thumbnail", "failed", {"reason": str(e)})
+                emit("thumbnail", "failed", {"error": str(e)}, user_error)
+                raise ValueError(user_error) from e
 
+        # Step 6: Save to database
         with sessionLocal() as session:
             job = session.get(Job, job_uuid)
             if job:
@@ -132,17 +246,23 @@ def process_video_pipeline(self, job_id: str):
                     session.rollback()
                     raise
 
-        emit("done", "completed", {"images_count": len(image_urls), "thumbnail_url": thumbnail_url})
-        return {"status": "success"}
+        emit("done", "completed", {
+            "images_count": len(image_urls),
+            "thumbnail_url": thumbnail_url
+        }, SUCCESS_MESSAGES["completed"])
+        return {"status": "success", "thumbnail_url": thumbnail_url}
 
     except Exception as exc:
-        emit("error", "failed", {"message": str(exc)})
+        # Emit user-friendly error
+        user_error = _get_user_friendly_error(exc) if not isinstance(exc, ValueError) else str(exc)
+        emit("error", "failed", {"error": str(exc)}, user_error)
+        
+        # Update job status
         with sessionLocal() as session:
             job = session.get(Job, job_uuid)
             if job:
                 job.status = JobStatus.failed
-                job.error_message = str(exc)
-                try:
+                job.error_message = user_error  
                     session.commit()
                 except Exception:
                     session.rollback()
