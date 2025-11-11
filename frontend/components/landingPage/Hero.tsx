@@ -130,13 +130,13 @@ export default function Hero() {
                 {/* Before Image (Background) */}
                 <div className="relative w-full aspect-video">
                   <Image
-                    src="/public/before-thumbnail.png"
+                    src="/before-thumbnail.png"
                     alt="Before - Manual Thumbnail Creation"
                     fill
                     className="object-cover"
                     priority
                   />
-                  <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-md text-sm font-semibold">
+                  <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-md text-sm font-semibold">
                     BEFORE
                   </div>
                 </div>
@@ -147,13 +147,13 @@ export default function Hero() {
                   style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
                 >
                   <Image
-                    src="/resources/after-thumbnail.png"
+                    src="/after-thumbnail.png"
                     alt="After - AI Generated Thumbnail"
                     fill
                     className="object-cover"
                     priority
                   />
-                  <div className="absolute top-4 right-4 bg-primary/90 text-white px-3 py-1 rounded-md text-sm font-semibold">
+                  <div className="absolute top-4 left-4 bg-primary/90 text-white px-3 py-1 rounded-md text-sm font-semibold">
                     AFTER
                   </div>
                 </div>

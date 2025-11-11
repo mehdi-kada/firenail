@@ -5,8 +5,7 @@ import { JobEvent } from "./JobEvents"
 function formatStepName(step: string, status?: string): string {
   const stepNames: Record<string, string> = {
     job: "Starting",
-    metadata: "Getting video info",
-    transcript: "Loading captions",
+    metadata: "Loading video data",
     analysis: "Analyzing content",
     images: "Finding images",
     thumbnail: "Creating thumbnail",
@@ -79,7 +78,7 @@ export const useJobState = (events: JobEvent[]) => {
   }, [errorEvent])
 
   const timelineSteps = useMemo(() => {
-    const ordered = ["metadata", "transcript", "analysis", "images", "thumbnail", "done"]
+    const ordered = ["metadata", "analysis", "images", "thumbnail", "done"]
     const latestByStep = [...events].reverse()
 
     return ordered.map((step) => {

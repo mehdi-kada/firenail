@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { isAxiosError } from 'axios'
+import Link from 'next/link'
 
 import { cn } from '@/lib/utils'
 import api from '@/lib/axios/axios'
@@ -15,9 +16,14 @@ type UrlInputFormProps = React.ComponentPropsWithoutRef<'form'> & {
 
 const TASKS_ENDPOINT = '/api/tasks/'
 
+type ErrorState = {
+  message: string
+  isLimitError?: boolean
+}
+
 export function UrlInputForm({ className, onTaskCreated, isGenerating = false, ...props }: UrlInputFormProps) {
   const [url, setUrl] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<ErrorState | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const validateUrl = (value: string) => {
@@ -53,7 +59,7 @@ export function UrlInputForm({ className, onTaskCreated, isGenerating = false, .
 
     const validationError = validateUrl(url)
     if (validationError) {
-      setError(validationError)
+      setError({ message: validationError })
       return
     }
 
@@ -74,16 +80,26 @@ export function UrlInputForm({ className, onTaskCreated, isGenerating = false, .
         if (errorData?.detail && Array.isArray(errorData.detail)) {
           const firstError = errorData.detail[0]
           if (firstError?.msg) {
-            setError(firstError.msg)
+            setError({ message: firstError.msg })
           } else {
-            setError('Invalid YouTube URL. Please check and try again.')
+            setError({ message: 'Invalid YouTube URL. Please check and try again.' })
+          }
+        } else if (errorData?.detail && typeof errorData.detail === 'object') {
+          if (errorData.detail.error === 'Usage limit exceeded') {
+            const { message, current, limit, plan } = errorData.detail
+            setError({
+              message: `${message || 'Usage limit exceeded'}. You've used ${current} of ${limit} images on the ${plan} plan. Please upgrade to continue.`,
+              isLimitError: true
+            })
+          } else {
+            setError({ message: errorData.detail.message || 'Unable to process your request. Please try again.' })
           }
         } else {
           const message = errorData?.message ?? errorData?.detail
-          setError(message ?? 'Unable to process your request. Please try again.')
+          setError({ message: typeof message === 'string' ? message : 'Unable to process your request. Please try again.' })
         }
       } else {
-        setError('Something went wrong. Please try again.')
+        setError({ message: 'Something went wrong. Please try again.' })
       }
     } finally {
       setIsSubmitting(false)
@@ -114,7 +130,16 @@ export function UrlInputForm({ className, onTaskCreated, isGenerating = false, .
           {isBusy ? 'Generating...' : 'Generate'}
         </Button>
       </div>
-      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+      {error && (
+        <div className="mt-2 text-sm text-destructive">
+          <p>{error.message}</p>
+          {error.isLimitError && (
+            <Link href="/pricing" className="underline font-semibold hover:text-destructive/80 mt-1 inline-block">
+              View pricing plans →
+            </Link>
+          )}
+        </div>
+      )}
     </form>
   )
 }
