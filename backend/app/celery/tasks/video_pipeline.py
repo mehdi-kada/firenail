@@ -83,31 +83,30 @@ def process_video_pipeline(self, job_id: str):
     emit("job", "processing", {"video_url": video_url}, SUCCESS_MESSAGES["queued"])
 
     try:
-        # Step 1: Fetch video metadata
-        emit("metadata", "started", user_message="Fetching video information...")
+        # Step 1: Fetch video data (metadata + transcript in one request)
+        emit("metadata", "started", user_message="Loading video information and captions...")
         try:
-            video_title = transcripts.fetch_metadata(video_url)
-            emit("metadata", "completed", {"title": video_title}, SUCCESS_MESSAGES["metadata_fetched"])
+            video_data = transcripts.fetch_video_data(video_url)
+            video_title = video_data.title
+            transcript_text = video_data.transcript
+            
+            emit("metadata", "completed", {
+                "title": video_title,
+                "transcript_length": len(transcript_text)
+            }, SUCCESS_MESSAGES["metadata_fetched"])
+            
+            # Validate transcript length
+            if not transcript_text or len(transcript_text.strip()) < 50:
+                user_error = ERROR_MESSAGES["no_transcript"]
+                emit("metadata", "failed", {"error": "Transcript too short"}, user_error)
+                raise ValueError(user_error)
+                
         except Exception as exc:
             user_error = _get_user_friendly_error(exc)
             emit("metadata", "failed", {"error": str(exc)}, user_error)
             raise ValueError(user_error) from exc
-
-        # Step 2: Fetch transcript
-        emit("transcript", "started", user_message="Loading video captions...")
-        try:
-            transcript_text = transcripts.fetch_transcript(video_url)
-            if not transcript_text or len(transcript_text.strip()) < 50:
-                user_error = ERROR_MESSAGES["no_transcript"]
-                emit("transcript", "failed", {"error": "Transcript too short"}, user_error)
-                raise ValueError(user_error)
-            emit("transcript", "completed", {"length": len(transcript_text)}, SUCCESS_MESSAGES["transcript_fetched"])
-        except Exception as exc:
-            user_error = _get_user_friendly_error(exc)
-            emit("transcript", "failed", {"error": str(exc)}, user_error)
-            raise ValueError(user_error) from exc
         
-        # Step 3: Analyze content
+        # Step 2: Analyze content
         emit("analysis", "started", user_message="Analyzing video content...")
         try:
             prompt = analysis_prompt(transcript_text, video_title)
@@ -129,7 +128,7 @@ def process_video_pipeline(self, job_id: str):
             emit("analysis", "failed", {"error": str(exc)}, user_error)
             raise ValueError(user_error) from exc
 
-        # Step 4: Search for reference images
+        # Step 3: Search for reference images
         emit("images", "started", user_message="Finding reference images...")
         image_urls = []
         failed_keywords = []
@@ -162,7 +161,7 @@ def process_video_pipeline(self, job_id: str):
             "found_for": [img["keyword"] for img in image_urls]
         }, SUCCESS_MESSAGES["images_found"])
 
-        # Step 5: Generate thumbnail
+        # Step 4: Generate thumbnail
         thumbnail_url = None
         if len(image_urls) >= 1:
             thumbnail_prompt = thumbnail_generation_prompt(
@@ -194,7 +193,7 @@ def process_video_pipeline(self, job_id: str):
                 emit("thumbnail", "failed", {"error": str(e)}, user_error)
                 raise ValueError(user_error) from e
 
-        # Step 6: Save to database
+        # Step 5: Save to database
         with sessionLocal() as session:
             job = session.get(Job, job_uuid)
             if job:
@@ -262,7 +261,8 @@ def process_video_pipeline(self, job_id: str):
             job = session.get(Job, job_uuid)
             if job:
                 job.status = JobStatus.failed
-                job.error_message = user_error  
+                job.error_message = user_error  # Store user-friendly error
+                try:
                     session.commit()
                 except Exception:
                     session.rollback()
