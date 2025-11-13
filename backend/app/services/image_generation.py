@@ -1,7 +1,7 @@
 import os
 import time
+import base64
 from typing import List
-from io import BytesIO
 import requests
 from dotenv import load_dotenv
 
@@ -10,27 +10,36 @@ from app.services.storage import upload_thumbnail
 load_dotenv()
 
 
-def _validate_image_url(url: str, timeout: int = 5) -> bool:
-    """Check if image URL is accessible and returns valid image content"""
+def _download_image_to_base64(url: str, timeout: int = 10) -> str:
+    """
+    Download an image from a URL and convert it to base64 string.
+    Returns base64 encoded string with data URI prefix (data:image/...;base64,...)
+    """
     try:
         if not url or not url.startswith(('http://', 'https://')):
-            print(f"Invalid URL format: {url}")
-            return False
+            raise ValueError(f"Invalid URL format: {url}")
         
-        response = requests.head(url, timeout=timeout, allow_redirects=True)
+        print(f"Downloading image from: {url}")
+        response = requests.get(url, timeout=timeout, allow_redirects=True)
+        
         if response.status_code != 200:
-            print(f"URL returned status {response.status_code}: {url}")
-            return False
+            raise ValueError(f"URL returned status {response.status_code}: {url}")
         
         content_type = response.headers.get('content-type', '').lower()
         if not any(img_type in content_type for img_type in ['image/', 'jpeg', 'png', 'jpg', 'webp']):
-            print(f"URL is not an image (content-type: {content_type}): {url}")
-            return False
+            raise ValueError(f"URL is not an image (content-type: {content_type}): {url}")
         
-        return True
+        image_bytes = response.content
+        base64_encoded = base64.b64encode(image_bytes).decode('utf-8')
+        
+        data_uri = f"data:{content_type};base64,{base64_encoded}"
+        
+        print(f"Successfully converted image to base64 (size: {len(image_bytes)} bytes)")
+        return data_uri
+        
     except Exception as e:
-        print(f"Failed to validate URL {url}: {e}")
-        return False
+        print(f"Failed to download and convert image from {url}: {e}")
+        raise
 
 
 def generate_thumbnail(
@@ -48,20 +57,29 @@ def generate_thumbnail(
     if not reference_image_urls:
         raise ValueError("At least one reference image URL is required")
     
-    print(f"Validating {len(reference_image_urls)} image URLs...")
-    valid_urls = [url for url in reference_image_urls[:3] if _validate_image_url(url)]
+    print(f"Downloading and converting {len(reference_image_urls)} images to base64...")
     
-    if not valid_urls:
-        raise ValueError("No valid image URLs found after validation")
+    # Download and convert images to base64 (limit to first 3)
+    base64_images = []
+    for url in reference_image_urls[:3]:
+        try:
+            base64_image = _download_image_to_base64(url)
+            base64_images.append(base64_image)
+        except Exception as e:
+            print(f"Failed to process image {url}: {e}")
+            continue
     
-    print(f"Using {len(valid_urls)} valid URLs out of {len(reference_image_urls[:3])}")
+    if not base64_images:
+        raise ValueError("No valid images could be downloaded and converted")
+    
+    print(f"Successfully converted {len(base64_images)} images to base64 out of {len(reference_image_urls[:3])}")
     
     base_url = "https://api.freepik.com/v1/ai/gemini-2-5-flash-image-preview"
     
     payload = {
-        "reference_images": valid_urls,
+        "reference_images": base64_images,
         "prompt": prompt,
-        "aspect_ratio": "widescreen_16_9",
+        "aspect_ratio": "9:16",
     }
     
     headers = {
@@ -69,7 +87,7 @@ def generate_thumbnail(
         "Content-Type": "application/json"
     }
     
-    print(f"Sending request to Freepik API with payload: {payload}")
+    print(f"Sending request to Freepik API with {len(base64_images)} base64 images")
     
     response = requests.post(base_url, json=payload, headers=headers, timeout=60)
     

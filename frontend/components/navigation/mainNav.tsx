@@ -71,7 +71,7 @@ export function MainNav() {
 							className="h-15"
 							priority
 						/>
-						<span className="hidden sm:inline-flex text-lg font-semibold">Firenail</span>
+
 					</Link>
 
 					<nav className="hidden md:flex items-center gap-6 text-sm font-medium">
