@@ -12,7 +12,7 @@ export default function CTA() {
   const handleGenerate = () => {
     const encodedUrl = encodeURIComponent(videoUrl.trim());
     router.push(`/generate?videoUrl=${encodedUrl}`);
-    console.log('Generating thumbnail for:', videoUrl);
+    
   };
 
   return (

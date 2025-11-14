@@ -17,9 +17,9 @@ export function GenerateContainer() {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        console.log("Auth session found on component mount:", session);
+        
       } else {
-        console.error("No auth session found. Realtime connection will fail.");
+        
       }
     };
     checkSession();
@@ -32,7 +32,7 @@ export function GenerateContainer() {
     }
 
     const timeoutId = setTimeout(() => {
-      console.warn(`Job ${jobId} timed out after ${JOB_TIMEOUT_MS}ms`)
+      
       setHasTimedOut(true)
       setIsGenerating(false)
     }, JOB_TIMEOUT_MS)

@@ -43,7 +43,7 @@ export default function ThumbnailsPage() {
             page_size: 12,
           },
         })
-        console.log("thumbnails are : ", response.data)
+        
         setThumbnails(response.data.items)
         setTotalPages(response.data.total_pages)
         setTotal(response.data.total)

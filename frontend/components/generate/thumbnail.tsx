@@ -16,7 +16,7 @@ export default function Thumbnail({ thumbnailUrl, isCompleted, handleDownload }:
         window.URL.revokeObjectURL(url);
         handleDownload();
       } catch (error) {
-        console.error('Failed to download image:', error);
+        
       }
     };
 

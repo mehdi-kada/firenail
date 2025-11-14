@@ -60,7 +60,7 @@ export const useJobEvents = (jobId: string | undefined) =>{
             filter: `job_id=eq.${jobId}`,
         },
         (payload) => {
-            console.log("New job event:", payload)
+            
             if (!payload.new) return
             const newEvent = payload.new as JobEvent
             setEvents((prev) => {
@@ -75,11 +75,11 @@ export const useJobEvents = (jobId: string | undefined) =>{
         )
         .subscribe((status, err) => {
         if (status === "SUBSCRIBED") {
-            console.log(`Successfully subscribed to job events for ${jobId}`)
+            
             loadEvents()
         }
         if (status === "CHANNEL_ERROR") {
-            console.error("Channel error:", err)
+            
             setError(
             err?.message
                 ? `Failed to subscribe to updates: ${err.message}`

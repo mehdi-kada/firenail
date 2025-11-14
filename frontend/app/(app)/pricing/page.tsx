@@ -26,7 +26,7 @@ export default function PricingPage() {
         const portalUrl = await subscriptionApi.getCustomerPortal()
         window.location.href = portalUrl
       } catch (error) {
-        console.error("Failed to open portal:", error)
+        
         alert("Failed to open customer portal. Please try again.")
       } finally {
         setLoadingPlanId(null)
@@ -44,7 +44,7 @@ export default function PricingPage() {
       const checkoutUrl = await subscriptionApi.createCheckout(productId)
       window.location.href = checkoutUrl
     } catch (error: any) {
-      console.error("Checkout error:", error)
+      
       if (error.response?.status === 400) {
         alert("You already have an active subscription")
       } else {

@@ -47,7 +47,7 @@ export function ThumbnailCard({
   const secondaryUrl = secondaryHref ?? storageUrl
 
   const handleImageError = () => {
-    console.error('Image failed to load:', storageUrl)
+    
     setImageError(true)
   }
 
@@ -65,7 +65,7 @@ export function ThumbnailCard({
       window.URL.revokeObjectURL(url);
       if (onDownload) onDownload();
     } catch (error) {
-      console.error('Failed to download image:', error);
+      
     }
   };
 
