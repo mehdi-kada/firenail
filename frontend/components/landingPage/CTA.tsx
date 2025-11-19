@@ -38,7 +38,7 @@ export default function CTA() {
               </span>
               <div className="flex w-full items-stretch rounded-xl overflow-hidden border border-border bg-background/50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                 {/* Icon */}
-                <div className="flex items-center justify-center px-4 bg-muted/50 text-muted-foreground">
+                <div className="hidden sm:flex items-center justify-center px-4 bg-muted/50 text-muted-foreground">
                   <LinkIcon className="w-5 h-5" />
                 </div>
                 
@@ -58,7 +58,7 @@ export default function CTA() {
                     disabled={!videoUrl.trim()}
                     className="bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-primary-foreground px-6 py-2.5 rounded-lg font-semibold text-sm sm:text-base transition-all hover:scale-105 hover:shadow-lg hover:shadow-primary/40 disabled:hover:scale-100 disabled:hover:shadow-none whitespace-nowrap"
                   >
-                    Generate Now
+                    Generate
                   </button>
                 </div>
               </div>
