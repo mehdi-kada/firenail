@@ -121,6 +121,36 @@ class SubscriptionService:
         return True
 
     @staticmethod
+    async def revoke_subscription(
+        polar_subscription_id: str,
+        db: AsyncSession
+    ) -> bool:
+        """Mark subscription as revoked (immediate cancellation)"""
+        subscription = await SubscriptionService.get_subscription_by_polar_id(
+            polar_subscription_id,
+            db
+        )
+        
+        if not subscription:
+            return False
+        
+        subscription.status = "revoked"
+        subscription.cancel_at_period_end = False
+        subscription.updated_at = datetime.now(timezone.utc)
+        
+        await db.commit()
+        
+        # Also update profile immediately since access is revoked
+        await SubscriptionService.update_user_premium_status(
+            subscription.user_id,
+            False,
+            db
+        )
+        
+        return True
+
+
+    @staticmethod
     async def check_user_premium_status(
         user_id: UUID,
         db: AsyncSession

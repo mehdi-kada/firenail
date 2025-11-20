@@ -41,8 +41,10 @@ async def polar_webhook(
         await handle_subscription_created(event, db)
     elif event_type == 'subscription.updated':
         await handle_subscription_updated(event, db)
-    elif event_type == 'subscription.canceled' or event_type == 'subscription.revoked':
+    elif event_type == 'subscription.canceled':
         await handle_subscription_canceled(event, db)
+    elif event_type == 'subscription.revoked':
+        await handle_subscription_revoked(event, db)
     else:
         print(f"Unhandled event type: {event_type}")
 
@@ -167,5 +169,25 @@ async def handle_subscription_canceled(event, db: AsyncSession):
             print("Failed to cancel subscription in database")
     except Exception as e:
         print(f"Error handling subscription cancellation: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+async def handle_subscription_revoked(event, db: AsyncSession):
+    """Handle subscription.revoked event - immediate cancellation/revocation of access"""
+    try:
+        subscription_data = event.data
+        subscription_id = subscription_data.id
+        
+        print(f"Handling subscription revocation: {subscription_id}")
+        
+        success = await SubscriptionService.revoke_subscription(subscription_id, db)
+        
+        if success:
+            print("Subscription revoked, user access removed immediately")
+        else:
+            print("Failed to revoke subscription in database")
+    except Exception as e:
+        print(f"Error handling subscription revocation: {e}")
         import traceback
         traceback.print_exc()
