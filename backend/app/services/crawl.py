@@ -1,4 +1,5 @@
 import os
+import logging
 from dotenv import load_dotenv
 from typing import List, Dict
 import requests
@@ -6,6 +7,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 FIRECRAWL_URL = "https://api.firecrawl.dev/v2/search"
 
@@ -54,7 +57,7 @@ def crawl_images(keyword: str, limit: int = 1) -> List[Dict]:
         session = _session_with_retries()
         response = session.post(url, json=payload, headers=headers, timeout=(10, 30))
     except (requests.exceptions.SSLError, requests.exceptions.ConnectTimeout, requests.exceptions.ReadTimeout) as e:
-        print(f"Firecrawl network/SSL error for '{keyword}': {e}. Returning no images.")
+        logger.warning(f"Firecrawl network/SSL error for '{keyword}': {e}. Returning no images.")
         return []
     except requests.exceptions.RequestException:
         raise
@@ -66,7 +69,7 @@ def crawl_images(keyword: str, limit: int = 1) -> List[Dict]:
             response=response,
         )
     if response.status_code == 429 or 500 <= response.status_code < 600:
-        print(f"Firecrawl unavailable ({response.status_code}) for '{keyword}'. Returning no images.")
+        logger.warning(f"Firecrawl unavailable ({response.status_code}) for '{keyword}'. Returning no images.")
         return []
 
     response.raise_for_status()

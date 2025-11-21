@@ -1,6 +1,7 @@
 import asyncio
 import uuid
 import re
+import logging
 from datetime import UTC, datetime
 
 from pydantic import UUID4, BaseModel, HttpUrl, field_validator
@@ -15,6 +16,8 @@ from app.models.profiles import Profile
 from app.services import events
 from app.services.subscription_services.limit_checker import LimitCheckResult
 from app.celery.tasks.video_pipeline import process_video_pipeline
+
+logger = logging.getLogger(__name__)
 
 
 def validate_youtube_url(url: str) -> bool:
@@ -45,7 +48,7 @@ def enqueue_video_pipeline(job_id: str):
             }
         )
     except Exception as exc:
-        print(f"CRITICAL: Failed to enqueue job {job_id} after multiple retries: {exc}")
+        logger.critical(f"Failed to enqueue job {job_id} after multiple retries: {exc}")
 
 class CreateTaskRequest(BaseModel):
     url: HttpUrl
@@ -72,13 +75,13 @@ async def _run_background(job_id: str, video_url: str):
         try:
             events.record_event(job_id, "job", "queued", {"video_url": video_url})
         except Exception as exc:
-            print(f"Error recording queued event for job {job_id}: {exc}")
+            logger.error(f"Error recording queued event for job {job_id}: {exc}")
 
     def enqueue():
         try:
             enqueue_video_pipeline(job_id)
         except Exception as exc:
-            print(f"Error enqueuing pipeline for job {job_id}: {exc}")
+            logger.error(f"Error enqueuing pipeline for job {job_id}: {exc}")
 
     try:
         await asyncio.gather(
@@ -86,7 +89,7 @@ async def _run_background(job_id: str, video_url: str):
             loop.run_in_executor(None, enqueue),
         )
     except Exception as exc:
-        print(f"Unexpected error in background task for job {job_id}: {exc}")
+        logger.error(f"Unexpected error in background task for job {job_id}: {exc}")
 
 
 @router.post("/tasks/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
@@ -112,7 +115,7 @@ async def create_task(
             await session.commit()
         except Exception as exc:
             await session.rollback()
-            print(f"Error creating job {job_id}: {exc}")
+            logger.error(f"Error creating job {job_id}: {exc}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create job")
 
     job_id_str = str(job_id)
@@ -120,7 +123,7 @@ async def create_task(
     task = asyncio.create_task(_run_background(job_id_str, str(request.url)))
     task.add_done_callback(lambda t: t.exception() if not t.cancelled() else None)
     
-    print(f"Queued job {job_id} for video URL {request.url}")
+    logger.info(f"Queued job {job_id} for video URL {request.url}")
 
     return TaskResponse(task_id=job_id, status=JobStatus.queued.value)
 

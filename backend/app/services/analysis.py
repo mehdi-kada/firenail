@@ -1,5 +1,6 @@
 
 import os 
+import logging
 from dotenv import load_dotenv
 from app.constants.prompts import analysis_prompt
 import re
@@ -10,6 +11,8 @@ import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 @retry(
     stop=stop_after_attempt(3),
@@ -43,8 +46,8 @@ def analyze_transcript(prompt: str) -> Dict[str, Any]:
     try:
         raw = data["choices"][0]["message"]["content"]
     except (KeyError, IndexError) as e:
-        print(f"Error parsing OpenRouter response: {e}")
-        print(f"Response data: {data}")
+        logger.error(f"Error parsing OpenRouter response: {e}")
+        logger.debug(f"Response data: {data}")
         raise ValueError(f"Invalid OpenRouter response structure: {e}") from e
     
     m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw, re.S | re.I)
@@ -58,12 +61,12 @@ def analyze_transcript(prompt: str) -> Dict[str, Any]:
 
     try:
         parsed_data = json.loads(json_text)
-        print("✓ Successfully parsed JSON data:", parsed_data)
+        logger.info("Successfully parsed JSON data")
     except json.JSONDecodeError as e:
-        print(f"✗ JSON decode error at position {e.pos}: {e.msg}")
-        print(f"Raw text length: {len(json_text)}")
-        print(f"Raw text preview (first 200 chars): {json_text[:200]}")
-        print(f"Raw text preview (last 200 chars): {json_text[-200:]}")
+        logger.warning(f"JSON decode error at position {e.pos}: {e.msg}")
+        logger.debug(f"Raw text length: {len(json_text)}")
+        logger.debug(f"Raw text preview (first 200 chars): {json_text[:200]}")
+        logger.debug(f"Raw text preview (last 200 chars): {json_text[-200:]}")
         
         # Try to extract data using regex as fallback
         try:
@@ -75,20 +78,20 @@ def analyze_transcript(prompt: str) -> Dict[str, Any]:
                 keywords_str = keywords_match.group(1)
                 keywords = re.findall(r'"([^"]+)"', keywords_str)
                 
-                print(f"✓ Extracted via regex - Summary: {summary[:100]}..., Keywords: {keywords}")
+                logger.info(f"Extracted via regex - Summary length: {len(summary)}, Keywords count: {len(keywords)}")
                 return {"summary": summary, "image_search_keywords": keywords}
         except Exception as regex_error:
-            print(f"✗ Regex fallback failed: {regex_error}")
+            logger.error(f"Regex fallback failed: {regex_error}")
         
         try:
             if json_text.strip():
                 parsed_data = ast.literal_eval(json_text)
-                print("✓ Parsed with ast.literal_eval:", parsed_data)
+                logger.info("Parsed with ast.literal_eval")
             else:
-                print("✗ Empty json_text, cannot parse")
+                logger.error("Empty json_text, cannot parse")
                 return {"summary": "", "image_search_keywords": []}
         except (ValueError, SyntaxError) as ast_error:
-            print(f"✗ ast.literal_eval failed: {ast_error}")
+            logger.error(f"ast.literal_eval failed: {ast_error}")
             return {"summary": "", "image_search_keywords": []}
 
     summary = parsed_data.get('summary', '')
