@@ -7,7 +7,7 @@ from app.services.image_generation import generate_thumbnail, _download_image_to
 
 @pytest.fixture
 def mock_env_vars():
-    with patch.dict("os.environ", {"FREEPIK_API_KEY": "test-key"}):
+    with patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"}):
         yield
 
 def test_download_image_to_base64_success():
@@ -51,40 +51,38 @@ def test_generate_thumbnail_success(mock_upload, mock_download, mock_env_vars):
     mock_upload.return_value = "http://bucket/thumbnail.jpg"
 
     with patch("requests.post") as mock_post, patch("requests.get") as mock_get:
-        # Mock initial task creation
+        # Mock OpenRouter response
         mock_post_response = MagicMock()
         mock_post_response.status_code = 200
-        mock_post_response.json.return_value = {"data": {"task_id": "task-123"}}
-        mock_post.return_value = mock_post_response
-
-        # Mock polling response (first poll is completed)
-        mock_poll_response = MagicMock()
-        mock_poll_response.status_code = 200
-        mock_poll_response.json.return_value = {
-            "data": {
-                "status": "COMPLETED",
-                "generated": [{"url": "http://freepik.com/generated.jpg"}]
-            }
+        mock_post_response.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "content": "http://openrouter.ai/generated.jpg"
+                    }
+                }
+            ]
         }
+        mock_post.return_value = mock_post_response
 
         # Mock downloading the generated image
         mock_image_response = MagicMock()
         mock_image_response.status_code = 200
         mock_image_response.content = b"generated-image-content"
 
-        mock_get.side_effect = [mock_poll_response, mock_image_response]
+        mock_get.return_value = mock_image_response
 
         result = generate_thumbnail("job-123", "prompt", ["http://ref1.jpg"])
 
         assert result == "http://bucket/thumbnail.jpg"
         mock_download.assert_called()
         mock_post.assert_called()
-        mock_get.assert_called()
+        mock_get.assert_called_with("http://openrouter.ai/generated.jpg", timeout=30)
         mock_upload.assert_called_with("job-123", b"generated-image-content")
 
 @patch("app.services.image_generation._download_image_to_base64")
 def test_generate_thumbnail_api_error(mock_download, mock_env_vars):
-    """Test handling of API errors during task creation."""
+    """Test handling of API errors."""
     mock_download.return_value = "data:image/jpeg;base64,encoded"
 
     with patch("requests.post") as mock_post:
@@ -93,27 +91,25 @@ def test_generate_thumbnail_api_error(mock_download, mock_env_vars):
         mock_response.text = "Bad Request"
         mock_post.return_value = mock_response
 
-        with pytest.raises(RuntimeError, match="Freepik API returned 400"):
+        with pytest.raises(RuntimeError, match="OpenRouter API returned 400"):
             generate_thumbnail("job-123", "prompt", ["http://ref1.jpg"])
 
 @patch("app.services.image_generation._download_image_to_base64")
-def test_generate_thumbnail_failed_status(mock_download, mock_env_vars):
-    """Test handling of FAILED status during polling."""
+def test_generate_thumbnail_no_image_url(mock_download, mock_env_vars):
+    """Test handling of response with no image URL."""
     mock_download.return_value = "data:image/jpeg;base64,encoded"
 
-    with patch("requests.post") as mock_post, patch("requests.get") as mock_get:
+    with patch("requests.post") as mock_post:
         mock_post.return_value.status_code = 200
-        mock_post.return_value.json.return_value = {"data": {"task_id": "task-123"}}
-
-        mock_poll_response = MagicMock()
-        mock_poll_response.status_code = 200
-        mock_poll_response.json.return_value = {
-            "data": {
-                "status": "FAILED",
-                "error": "Generation failed"
-            }
+        mock_post.return_value.json.return_value = {
+            "choices": [
+                {
+                    "message": {
+                        "content": "I cannot generate an image."
+                    }
+                }
+            ]
         }
-        mock_get.return_value = mock_poll_response
 
-        with pytest.raises(RuntimeError, match="Freepik image generation failed"):
+        with pytest.raises(RuntimeError, match="No image URL found"):
             generate_thumbnail("job-123", "prompt", ["http://ref1.jpg"])
