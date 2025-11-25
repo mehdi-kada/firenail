@@ -109,11 +109,11 @@ export function UrlInputForm({ className, onTaskCreated, isGenerating = false, .
   const isBusy = isSubmitting || isGenerating
 
   return (
-    <form onSubmit={handleSubmit} className={cn('', className)} {...props} noValidate>
-      <div className="relative">
+    <form onSubmit={handleSubmit} className={cn('w-full max-w-2xl mx-auto', className)} {...props} noValidate>
+      <div className="relative flex items-center">
         <Input
-          className="w-full h-14 pl-6 pr-36 rounded-full bg-secondary-background border border-border focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-          placeholder="Enter YouTube video URL"
+          className="w-full h-16 pl-8 pr-44 rounded-full bg-card/80 backdrop-blur-sm border-2 border-white/5 focus-visible:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 text-lg placeholder:text-muted-foreground/60 shadow-xl transition-all duration-300"
+          placeholder="Paste your YouTube URL here..."
           type="url"
           value={url}
           onChange={(event) => setUrl(event.target.value)}
@@ -121,21 +121,34 @@ export function UrlInputForm({ className, onTaskCreated, isGenerating = false, .
           autoComplete="url"
           required
         />
+        
         <Button
-          className="absolute inset-y-2 right-1.5 px-8 py-2 bg-primary text-white text-sm font-bold rounded-full hover:bg-opacity-90 transition-all"
+          className="absolute right-2 h-12 px-8 rounded-full bg-primary text-primary-foreground font-bold text-base tracking-wide shadow-lg shadow-primary/20 active:scale-95 transition-all duration-200"
           type="submit"
           disabled={isBusy}
           aria-busy={isBusy}
         >
-          {isBusy ? 'Generating...' : 'Generate'}
+          {isBusy ? (
+            <span className="flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              <span className="opacity-80">Generating</span>
+            </span>
+          ) : (
+            'Generate'
+          )}
         </Button>
       </div>
+
       {error && (
-        <div className="mt-2 text-sm text-destructive">
-          <p>{error.message}</p>
+        <div className="mt-6 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-center animate-in slide-in-from-top-2 fade-in duration-300 backdrop-blur-sm">
+          <p className="font-medium flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            {error.message}
+          </p>
           {error.isLimitError && (
-            <Link href="/pricing" className="underline font-semibold hover:text-destructive/80 mt-1 inline-block">
-              View pricing plans →
+            <Link href="/pricing" className="inline-flex items-center gap-1 mt-2 text-sm font-semibold hover:text-destructive/80 transition-colors group">
+              Upgrade Plan 
+              <span className="group-hover:translate-x-0.5 transition-transform">→</span>
             </Link>
           )}
         </div>
