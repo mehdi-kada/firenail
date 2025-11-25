@@ -2,15 +2,19 @@
 
 
 from sqlalchemy import select, func
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 import math
+from uuid import UUID
 
-from app.schemas.thumbnail_schema import ThumbnailResponse, PaginatedThumbnailResponse
+from app.schemas.thumbnail_schema import ThumbnailResponse, PaginatedThumbnailResponse, ThumbnailRegenerateRequest
 from app.auth.validate import get_current_user_profile
+from app.auth.subscription_limits import check_image_generation_limit
+from app.services.subscription_services.limit_checker import LimitCheckResult, increment_image_count
 from app.database.database import get_db
 from app.models.images import Image
 from app.models.profiles import Profile
+from app.services.image_generation import regenerate_thumbnail
 
 
 router = APIRouter()
@@ -56,4 +60,60 @@ async def list_thumbnails(
         page=page,
         page_size=page_size,
         total_pages=total_pages,
+    )
+
+
+@router.post("/{image_id}/regenerate", response_model=ThumbnailResponse)
+async def regenerate_thumbnail_route(
+    image_id: UUID,
+    request: ThumbnailRegenerateRequest,
+    profile: Profile = Depends(get_current_user_profile),
+    limit_check: LimitCheckResult = Depends(check_image_generation_limit),
+    db: AsyncSession = Depends(get_db),
+):
+    # 1. Get original image
+    image = await db.get(Image, image_id)
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+    
+    if image.profile_id != profile.id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this image")
+
+    if not image.storage_public_url:
+        raise HTTPException(status_code=400, detail="Image does not have a URL")
+
+    # 2. Regenerate
+    try:
+        new_url = regenerate_thumbnail(
+            job_id=str(image.job_id),
+            image_url=image.storage_public_url,
+            prompt=request.prompt
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # 3. Create new Image record
+    new_image = Image(
+        job_id=image.job_id,
+        profile_id=profile.id,
+        video_title=image.video_title,
+        keywords=image.keywords,
+        firecrawl_payload=image.firecrawl_payload,
+        storage_public_url=new_url,
+    )
+    db.add(new_image)
+    
+    # 4. Update subscription usage
+    await increment_image_count(profile.id, db)
+    
+    await db.commit()
+    await db.refresh(new_image)
+
+    return ThumbnailResponse(
+        id=new_image.id,
+        job_id=new_image.job_id,
+        storage_url=new_image.storage_public_url,
+        video_title=new_image.video_title,
+        keywords=new_image.keywords or [],
+        created_at=new_image.created_at,
     )

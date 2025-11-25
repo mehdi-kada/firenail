@@ -1,5 +1,5 @@
 import os
-import time
+import json
 import base64
 from typing import List
 import requests
@@ -48,11 +48,11 @@ def generate_thumbnail(
     reference_image_urls: List[str],
 ) -> str:
     """
-    Generate thumbnail using Freepik API
+    Generate thumbnail using OpenRouter API with gemini-2.5-flash-image-preview
     """
-    api_key = os.environ.get('FREEPIK_API_KEY')
+    api_key = os.environ.get('OPENROUTER_API_KEY')
     if not api_key:
-        raise ValueError("FREEPIK_API_KEY environment variable not set")
+        raise ValueError("OPENROUTER_API_KEY environment variable not set")
     
     if not reference_image_urls:
         raise ValueError("At least one reference image URL is required")
@@ -74,75 +74,186 @@ def generate_thumbnail(
     
     print(f"Successfully converted {len(base64_images)} images to base64 out of {len(reference_image_urls[:3])}")
     
-    base_url = "https://api.freepik.com/v1/ai/gemini-2-5-flash-image-preview"
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://thumbnailai.com", 
+        "X-Title": "ThumbnailAI"
+    }
+    
+    content = [
+        {
+            "type": "text",
+            "text": prompt
+        }
+    ]
+    
+    for base64_image in base64_images:
+        content.append({
+            "type": "image_url",
+            "image_url": {
+                "url": base64_image
+            }
+        })
+
+    messages = [
+        {
+            "role": "user",
+            "content": content
+        }
+    ]
     
     payload = {
-        "reference_images": base64_images,
-        "prompt": prompt,
-        "aspect_ratio": "9:16",
+        "model": "google/gemini-2.5-flash-image-preview",
+        "messages": messages,
+        "modalities": ["image", "text"],
+        "image_config": {
+            "aspect_ratio": "16:9"
+        }
     }
     
-    headers = {
-        "x-freepik-api-key": api_key,
-        "Content-Type": "application/json"
-    }
+    print(f"Sending request to OpenRouter API with {len(base64_images)} base64 images")
     
-    print(f"Sending request to Freepik API with {len(base64_images)} base64 images")
-    
-    response = requests.post(base_url, json=payload, headers=headers, timeout=60)
+    response = requests.post(url, headers=headers, json=payload, timeout=60)
     
     if response.status_code != 200:
         error_detail = response.text
-        print(f"Freepik API error ({response.status_code}): {error_detail}")
-        raise RuntimeError(f"Freepik API returned {response.status_code}: {error_detail}")
+        print(f"OpenRouter API error ({response.status_code}): {error_detail}")
+        raise RuntimeError(f"OpenRouter API returned {response.status_code}: {error_detail}")
     
     result = response.json()
-    print(f"Freepik API response: {result}")
+    print(f"OpenRouter API response: {result}")
     
-    if not result.get("data") or not result["data"].get("task_id"):
-        raise RuntimeError("No task_id returned from Freepik API")
-    
-    task_id = result["data"]["task_id"]
-    
-    max_attempts = 60
-    poll_interval = 5
-    
-    for attempt in range(max_attempts):
-        poll_url = f"{base_url}/{task_id}"
-        poll_response = requests.get(poll_url, headers={"x-freepik-api-key": api_key}, timeout=30)
-        poll_response.raise_for_status()
-        
-        poll_result = poll_response.json()
-        status = poll_result.get("data", {}).get("status")
-        
-        print(f"Polling attempt {attempt + 1}/{max_attempts} - Status: {status}")
-        
-        if status == "COMPLETED":
-            print(f"Full completed response: {poll_result}")
-            generated = poll_result.get("data", {}).get("generated", [])
-            error_field = poll_result.get("data", {}).get("error")
+    try:
+        image_url = None
+        if "choices" in result and len(result["choices"]) > 0:
+            message = result["choices"][0]["message"]
             
-            if error_field:
-                raise RuntimeError(f"Freepik API returned error in completed task: {error_field}")
+            # Check for images list 
+            if message.get("images") and len(message["images"]) > 0:
+                image_url = message["images"][0]["image_url"]["url"]
+                print(f"Found image URL in message.images: {image_url}")
             
-            if generated and len(generated) > 0:
-                image_url = generated[0] if isinstance(generated[0], str) else generated[0].get("url")
-                if not image_url:
-                    raise RuntimeError("No image URL in completed task")
+            # Fallback to content string if no images list
+            elif isinstance(message.get("content"), str) and message["content"].startswith("http"):
+                image_url = message["content"].strip()
+                print(f"Found image URL in message.content: {image_url}")
                 
+            if image_url:
                 image_response = requests.get(image_url, timeout=30)
                 image_response.raise_for_status()
                 
                 thumbnail_url = upload_thumbnail(job_id, image_response.content)
                 return thumbnail_url
             else:
-                raise RuntimeError(f"No generated images in completed task. Full response: {poll_result}")
-        
-        elif status == "FAILED":
-            error_msg = poll_result.get("data", {}).get("error", "Unknown error")
-            print(f"Full failed response: {poll_result}")
-            raise RuntimeError(f"Freepik image generation failed: {error_msg}")
-        
-        time.sleep(poll_interval)
+                print(f"Response content: {message.get('content')[:100]}...")
+                raise RuntimeError("No image URL found in OpenRouter response")
+        else:
+            raise RuntimeError("Invalid response format from OpenRouter")
+            
+    except Exception as e:
+        print(f"Failed to process OpenRouter response: {e}")
+        raise
+
+
+def regenerate_thumbnail(
+    job_id: str,
+    image_url: str,
+    prompt: str,
+) -> str:
+    """
+    Regenerate thumbnail based on an existing image and a prompt 
+    """
+    api_key = os.environ.get('OPENROUTER_API_KEY')
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY environment variable not set")
     
-    raise RuntimeError(f"Freepik image generation timed out after {max_attempts * poll_interval} seconds")
+    print(f"Downloading source image from {image_url}...")
+    try:
+        base64_image = _download_image_to_base64(image_url)
+    except Exception as e:
+        raise ValueError(f"Failed to download source image: {e}")
+    
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://thumbnailai.com", 
+        "X-Title": "ThumbnailAI"
+    }
+    
+    # Construct the prompt for editing
+    full_prompt = f"Edit this YouTube thumbnail based on the following instruction: {prompt}. Ensure the result is a high-quality, eye-catching YouTube thumbnail."
+
+    content = [
+        {
+            "type": "text",
+            "text": full_prompt
+        },
+        {
+            "type": "image_url",
+            "image_url": {
+                "url": base64_image
+            }
+        }
+    ]
+
+    messages = [
+        {
+            "role": "user",
+            "content": content
+        }
+    ]
+    
+    payload = {
+        "model": "google/gemini-2.5-flash-image-preview",
+        "messages": messages,
+        "modalities": ["image", "text"],
+        "image_config": {
+            "aspect_ratio": "16:9"
+        }
+    }
+    
+    print(f"Sending regeneration request to OpenRouter API")
+    
+    response = requests.post(url, headers=headers, json=payload, timeout=60)
+    
+    if response.status_code != 200:
+        error_detail = response.text
+        print(f"OpenRouter API error ({response.status_code}): {error_detail}")
+        raise RuntimeError(f"OpenRouter API returned {response.status_code}: {error_detail}")
+    
+    result = response.json()
+    print(f"OpenRouter API response: {result}")
+    
+    try:
+        image_url = None
+        if "choices" in result and len(result["choices"]) > 0:
+            message = result["choices"][0]["message"]
+            
+            # Check for images list 
+            if message.get("images") and len(message["images"]) > 0:
+                image_url = message["images"][0]["image_url"]["url"]
+                print(f"Found image URL in message.images: {image_url}")
+            
+            # Fallback to content string if no images list
+            elif isinstance(message.get("content"), str) and message["content"].startswith("http"):
+                image_url = message["content"].strip()
+                print(f"Found image URL in message.content: {image_url}")
+                
+            if image_url:
+                image_response = requests.get(image_url, timeout=30)
+                image_response.raise_for_status()
+                
+                thumbnail_url = upload_thumbnail(job_id, image_response.content)
+                return thumbnail_url
+            else:
+                print(f"Response content: {message.get('content')[:100]}...")
+                raise RuntimeError("No image URL found in OpenRouter response")
+        else:
+            raise RuntimeError("Invalid response format from OpenRouter")
+            
+    except Exception as e:
+        print(f"Failed to process OpenRouter response: {e}")
+        raise

@@ -23,3 +23,7 @@ class PaginatedThumbnailResponse(BaseModel):
     page: int
     page_size: int
     total_pages: int
+
+
+class ThumbnailRegenerateRequest(BaseModel):
+    prompt: str
