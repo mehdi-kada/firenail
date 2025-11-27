@@ -160,15 +160,17 @@ export default function Hero() {
 
                 {/* Slider Line */}
                 <div 
-                  className="absolute inset-y-0 w-1 bg-white shadow-lg"
+                  className="absolute inset-y-0 w-1 bg-gradient-to-b from-orange-400 via-red-500 to-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.8)]"
                   style={{ left: `${sliderPosition}%` }}
                 >
                   {/* Slider Handle */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center">
-                    <div className="flex gap-1">
-                      <div className="w-0.5 h-6 bg-gray-400"></div>
-                      <div className="w-0.5 h-6 bg-gray-400"></div>
-                    </div>
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-black rounded-full shadow-[0_0_25px_rgba(234,88,12,0.6)] border-[3px] border-white overflow-hidden hover:scale-110 transition-transform duration-200">
+                    <Image
+                      src="/ChatGPT Image Sep 24, 2025, 08_56_24 PM.png"
+                      alt="Slider Handle"
+                      fill
+                      className="object-cover"
+                    />
                   </div>
                 </div>
               </div>

@@ -99,11 +99,16 @@ export default function ThumbnailsPage() {
               {thumbnails.map((thumbnail, index) => (
                 <ThumbnailCard
                   key={thumbnail.id}
+                  id={thumbnail.id}
                   storageUrl={thumbnail.storage_url}
                   title={thumbnail.video_title}
                   createdAt={thumbnail.created_at}
                   keywords={thumbnail.keywords}
                   priority={index < 6}
+                  onRegenerate={(newThumbnail: ThumbnailResponse) => {
+                    setThumbnails((prev) => [newThumbnail, ...prev])
+                    setTotal((prev) => prev + 1)
+                  }}
                 />
               ))}
             </div>
