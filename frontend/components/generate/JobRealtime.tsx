@@ -22,6 +22,9 @@ export function JobRealtime({ jobId, onJobComplete, onJobError, hasTimedOut }: J
 
   const { isCompleted, hasError, currentStep, videoTitle, summary, thumbnailUrl, jobError } = useJobState(events)
 
+  const isStarting = Boolean(jobId) && events.length === 0 && !error && !hasTimedOut
+  const displayStep = isStarting ? "Starting..." : currentStep
+
 
   const completionReportedRef = useRef(false)
   const errorReportedRef = useRef(false)
@@ -81,12 +84,21 @@ export function JobRealtime({ jobId, onJobComplete, onJobError, hasTimedOut }: J
     )
   }
 
-  if (isLoading && events.length === 0) {
+  if (isStarting) {
     return (
-      <div className="mt-8 text-center">
-        <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-        <p className="mt-4 text-sm text-muted-foreground">Connecting...</p>
-      </div>
+      <section className="mt-8">
+        <div className="w-full max-w-2xl mx-auto">
+          <JobStatus
+            hasEvents={true}
+            isCompleted={false}
+            hasError={false}
+            currentStep={displayStep}
+            videoTitle={undefined}
+            summary={undefined}
+            jobError={null}
+          />
+        </div>
+      </section>
     )
   }
 
