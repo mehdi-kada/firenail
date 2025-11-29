@@ -61,12 +61,12 @@ def _generate_with_freepik(prompt: str, base64_images: List[str]) -> bytes:
     if not api_key:
         raise ValueError("FREEPIK_API_KEY environment variable not set")
 
-    base_url = "https://api.freepik.com/v1/ai/seedream-v4-edit"
+    base_url = "https://api.freepik.com/v1/ai/text-to-image/seedream-v4-edit"
     
     payload = {
         "reference_images": base64_images,
         "prompt": prompt,
-        "aspect_ratio": "social_story_9_16",
+        "aspect_ratio": "widescreen_16_9",
     }
     
     headers = {
