@@ -34,8 +34,7 @@ def _get_user_friendly_error(exc: Exception) -> str:
     elif isinstance(exc, InvalidURLError):
         return ERROR_MESSAGES["invalid_url"]
     
-    # Check error string patterns
-    error_str = str(exc).lower()
+    error_str = str(exc).lower()[:1000]
     
     error_mappings = [
         ("transcript" in error_str and "disabled" in error_str, "transcript_disabled"),
@@ -189,6 +188,7 @@ def process_video_pipeline(self, job_id: str):
 
         # Step 4: Generate thumbnail
         thumbnail_url = None
+        image_id = None
         if len(image_urls) >= 1:
             thumbnail_prompt = thumbnail_generation_prompt(
                 video_title=video_title,
@@ -202,47 +202,22 @@ def process_video_pipeline(self, job_id: str):
                     prompt=thumbnail_prompt,
                     reference_image_urls=[p["url"] for p in image_urls[:MAX_IMAGES_FOR_THUMBNAIL]]
                 )
-                emit("thumbnail", "completed", {"url": thumbnail_url}, SUCCESS_MESSAGES["thumbnail_completed"])
-            except ValueError as e:
-                user_error = str(e) if "valid" in str(e).lower() else ERROR_MESSAGES["thumbnail_generation_failed"]
-                logger.error(f"Thumbnail generation validation error: {e}")
-                emit("thumbnail", "failed", {"error": str(e)}, user_error)
-                raise ValueError(user_error) from e
-            except Timeout as e:
-                user_error = ERROR_MESSAGES["thumbnail_generation_timeout"]
-                logger.error(f"Thumbnail generation timeout: {e}")
-                emit("thumbnail", "failed", {"error": "Timeout"}, user_error)
-                raise ValueError(user_error) from e
-            except Exception as e:
-                user_error = _get_user_friendly_error(e)
-                logger.error(f"Thumbnail generation failed: {e}")
-                emit("thumbnail", "failed", {"error": str(e)}, user_error)
-                raise ValueError(user_error) from e
-
-        # Step 5: Save to database
-        with sessionLocal() as session:
-            job = session.get(Job, job_uuid)
-            if job:
-                existing_video = session.execute(
-                    select(Video).where(Video.job_id == job_uuid)
-                ).scalar_one_or_none()
-                if not existing_video:
-                    video_record = Video(
-                        job_id=job_uuid,
-                        title=video_title,
-                        summary=summary
-                    )
-                    session.add(video_record)
                 
-
-                if thumbnail_url:
-                    existing_generated = session.execute(
-                        select(Image).where(
-                            Image.job_id == job_uuid,
-                            Image.storage_public_url == thumbnail_url
-                        )
-                    ).scalar_one_or_none()
-                    if not existing_generated:
+                # Save to database immediately to get the ID
+                with sessionLocal() as session:
+                    job = session.get(Job, job_uuid)
+                    if job:
+                        existing_video = session.execute(
+                            select(Video).where(Video.job_id == job_uuid)
+                        ).scalar_one_or_none()
+                        if not existing_video:
+                            video_record = Video(
+                                job_id=job_uuid,
+                                title=video_title,
+                                summary=summary
+                            )
+                            session.add(video_record)
+                        
                         generated_image = Image(
                             job_id=job_uuid,
                             profile_id=job.user_id,
@@ -263,7 +238,40 @@ def process_video_pipeline(self, job_id: str):
                                     subscription.images_generated += 1
                             else:
                                 profile.images_generated += 1
-                
+                        
+                        session.commit()
+                        session.refresh(generated_image)
+                        image_id = str(generated_image.id)
+
+                emit("thumbnail", "completed", {"url": thumbnail_url, "image_id": image_id}, SUCCESS_MESSAGES["thumbnail_completed"])
+            except ValueError as e:
+                user_error = str(e) if "valid" in str(e).lower() else ERROR_MESSAGES["thumbnail_generation_failed"]
+                # Truncate error log
+                error_log = str(e)
+                if len(error_log) > 500:
+                    error_log = error_log[:500] + "... (truncated)"
+                logger.error(f"Thumbnail generation validation error: {error_log}")
+                emit("thumbnail", "failed", {"error": error_log}, user_error)
+                raise ValueError(user_error) from e
+            except Timeout as e:
+                user_error = ERROR_MESSAGES["thumbnail_generation_timeout"]
+                logger.error(f"Thumbnail generation timeout: {e}")
+                emit("thumbnail", "failed", {"error": "Timeout"}, user_error)
+                raise ValueError(user_error) from e
+            except Exception as e:
+                user_error = _get_user_friendly_error(e)
+                # Truncate error log
+                error_log = str(e)
+                if len(error_log) > 500:
+                    error_log = error_log[:500] + "... (truncated)"
+                logger.error(f"Thumbnail generation failed: {error_log}")
+                emit("thumbnail", "failed", {"error": error_log}, user_error)
+                raise ValueError(user_error) from e
+
+        # Step 5: Update job status
+        with sessionLocal() as session:
+            job = session.get(Job, job_uuid)
+            if job:
                 job.status = JobStatus.completed
                 try:
                     session.commit()
@@ -274,9 +282,10 @@ def process_video_pipeline(self, job_id: str):
 
         emit("done", "completed", {
             "images_count": len(image_urls),
-            "thumbnail_url": thumbnail_url
+            "thumbnail_url": thumbnail_url,
+            "image_id": image_id
         }, SUCCESS_MESSAGES["completed"])
-        return {"status": "success", "thumbnail_url": thumbnail_url}
+        return {"status": "success", "thumbnail_url": thumbnail_url, "image_id": image_id}
 
     except Exception as exc:
         # Emit user-friendly error

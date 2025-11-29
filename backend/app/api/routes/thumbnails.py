@@ -71,14 +71,10 @@ async def regenerate_thumbnail_route(
     limit_check: LimitCheckResult = Depends(check_image_generation_limit),
     db: AsyncSession = Depends(get_db),
 ):
-    # 1. Get original image
     image = await db.get(Image, image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
     
-    if image.profile_id != profile.id:
-        raise HTTPException(status_code=403, detail="Not authorized to access this image")
-
     if not image.storage_public_url:
         raise HTTPException(status_code=400, detail="Image does not have a URL")
 

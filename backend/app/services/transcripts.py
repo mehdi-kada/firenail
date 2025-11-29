@@ -32,7 +32,7 @@ def _get_ydl_opts():
 		'quiet': True,
 		'no_warnings': True,
 		'skip_download': True,
-		'format': 'worst',
+		'extract_flat': False,
 		'writesubtitles': True,
 		'writeautomaticsub': True,
 		'subtitleslangs': ['en'],

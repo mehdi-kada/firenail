@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 from pydantic import UUID4, BaseModel, HttpUrl, field_validator
 
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, BackgroundTasks
 
 from app.auth.validate import get_current_user_profile
 from app.auth.subscription_limits import check_image_generation_limit
@@ -95,6 +95,7 @@ async def _run_background(job_id: str, video_url: str):
 @router.post("/tasks/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(
     request: CreateTaskRequest,
+    background_tasks: BackgroundTasks,
     profile: Profile = Depends(get_current_user_profile),
     limit_check: LimitCheckResult = Depends(check_image_generation_limit),
 ):
@@ -115,15 +116,15 @@ async def create_task(
             await session.commit()
         except Exception as exc:
             await session.rollback()
-            logger.error(f"Error creating job {job_id}: {exc}")
+            print(f"Error creating job {job_id}: {exc}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create job")
 
     job_id_str = str(job_id)
     
-    task = asyncio.create_task(_run_background(job_id_str, str(request.url)))
-    task.add_done_callback(lambda t: t.exception() if not t.cancelled() else None)
+    # Use BackgroundTasks for true fire-and-forget
+    background_tasks.add_task(_run_background, job_id_str, str(request.url))
     
-    logger.info(f"Queued job {job_id} for video URL {request.url}")
+    print(f"Queued job {job_id} for video URL {request.url}")
 
     return TaskResponse(task_id=job_id, status=JobStatus.queued.value)
 
