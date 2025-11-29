@@ -1,8 +1,9 @@
-"use client"
+'use client';
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { motion } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -35,7 +36,12 @@ export function LandingNav({ className }: LandingNavProps) {
 		return () => subscription.unsubscribe()
 	}, [])
 	return (
-		<header className="sticky top-0 z-40 w-full p-4 sm:p-6">
+		<motion.header
+			initial={{ y: -20, opacity: 0 }}
+			animate={{ y: 0, opacity: 1 }}
+			transition={{ duration: 0.5, ease: "easeOut" }}
+			className="sticky top-0 z-40 w-full p-4 sm:p-6"
+		>
 			<div
 				className={cn(
 					"mx-auto flex h-16 w-full max-w-6xl items-center justify-between rounded-lg border border-border/60 bg-background/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6 lg:px-8",
@@ -43,40 +49,40 @@ export function LandingNav({ className }: LandingNavProps) {
 				)}
 			>
 				<nav className="flex w-full items-center justify-between">
-				<Link
-					href="/"
-					className="flex items-center gap-2 text-base font-semibold text-foreground transition-colors hover:text-primary"
-					aria-label="ThumbnailAI home"
-				>
-				<Image
-					src="/ChatGPT-Image-Sep-24_-2025_-08_56_24-PM.svg"
-					alt="ThumbnailAI Logo"
-					width={55}
-					height={55}
-					className="h-15"
-					priority
-				/>
-				</Link>
+					<Link
+						href="/"
+						className="flex items-center gap-2 text-base font-semibold text-foreground transition-colors hover:text-primary"
+						aria-label="ThumbnailAI home"
+					>
+						<Image
+							src="/ChatGPT-Image-Sep-24_-2025_-08_56_24-PM.svg"
+							alt="ThumbnailAI Logo"
+							width={55}
+							height={55}
+							className="h-15"
+							priority
+						/>
+					</Link>
 
-				<div className="flex items-center gap-2 sm:gap-3">
-					{user ? (
-						<Button className="px-3 sm:px-5" asChild>
-							<Link href="/thumbnails">Thumbnails</Link>
-						</Button>
-					) : (
-						<>
-							<Button variant="ghost" className="px-3 sm:px-4" asChild>
-								<Link href="/auth/login">Log in</Link>
-							</Button>
+					<div className="flex items-center gap-2 sm:gap-3">
+						{user ? (
 							<Button className="px-3 sm:px-5" asChild>
-								<Link href="/auth/register">Sign up</Link>
+								<Link href="/thumbnails">Thumbnails</Link>
 							</Button>
-						</>
-					)}
-				</div>
-			</nav>
+						) : (
+							<>
+								<Button variant="ghost" className="px-3 sm:px-4" asChild>
+									<Link href="/auth/login">Log in</Link>
+								</Button>
+								<Button className="px-3 sm:px-5" asChild>
+									<Link href="/auth/register">Sign up</Link>
+								</Button>
+							</>
+						)}
+					</div>
+				</nav>
 			</div>
-		</header>
+		</motion.header>
 	)
 }
 

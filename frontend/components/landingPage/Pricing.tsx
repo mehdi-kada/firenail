@@ -1,3 +1,7 @@
+'use client';
+
+import { motion } from 'framer-motion';
+
 export default function Pricing() {
   const plans = [
     {
@@ -32,28 +36,62 @@ export default function Pricing() {
     },
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6
+      }
+    }
+  };
+
   return (
     <section className="py-16 sm:py-24 space-y-12">
       {/* Section Header */}
-      <div className="text-center px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="text-center px-4"
+      >
         <h2 className="text-foreground text-3xl sm:text-4xl font-bold leading-tight tracking-tight">
           Find the Perfect Plan
         </h2>
         <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
           Start for free, or unlock powerful features to take your channel to the next level.
         </p>
-      </div>
+      </motion.div>
 
       {/* Pricing Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 max-w-3xl mx-auto">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 max-w-3xl mx-auto"
+      >
         {plans.map((plan, index) => (
-          <div
+          <motion.div
             key={index}
-            className={`flex flex-col rounded-lg p-8 relative transition-all ${
-              plan.highlighted
+            variants={cardVariants}
+            whileHover={{ y: -10 }}
+            className={`flex flex-col rounded-lg p-8 relative transition-colors ${plan.highlighted
                 ? "border-2 border-primary bg-card shadow-lg shadow-primary/20"
                 : "border border-border bg-card"
-            }`}
+              }`}
           >
             {/* Most Popular Badge */}
             {plan.highlighted && (
@@ -99,17 +137,16 @@ export default function Pricing() {
 
             {/* CTA Button */}
             <button
-              className={`mt-8 w-full rounded-full py-3 font-bold transition-all ${
-                plan.highlighted
+              className={`mt-8 w-full rounded-full py-3 font-bold transition-all ${plan.highlighted
                   ? "bg-primary text-primary-foreground hover:opacity-90"
                   : "bg-primary/20 text-primary hover:bg-primary/30"
-              }`}
+                }`}
             >
               {plan.buttonText}
             </button>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </section>
   );
 }
