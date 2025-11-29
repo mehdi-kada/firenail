@@ -12,7 +12,7 @@ function formatStepName(step: string, status?: string): string {
     done: "Complete",
     error: "Error"
   }
-  
+
   const statusSuffix = status === "started" ? "..." : ""
   return (stepNames[step] || step.charAt(0).toUpperCase() + step.slice(1)) + statusSuffix
 }
@@ -21,7 +21,7 @@ function formatStepName(step: string, status?: string): string {
 
 export const useJobState = (events: JobEvent[]) => {
 
-     const videoTitle = useMemo(() => {
+  const videoTitle = useMemo(() => {
     const metadataEvent = events.find((e) => e.step === "metadata" && e.status === "completed")
     return metadataEvent?.payload?.title as string | undefined
   }, [events])
@@ -34,6 +34,11 @@ export const useJobState = (events: JobEvent[]) => {
   const thumbnailUrl = useMemo(() => {
     const thumbnailEvent = events.find((e) => e.step === "thumbnail" && e.status === "completed")
     return thumbnailEvent?.payload?.url as string | undefined
+  }, [events])
+
+  const imageId = useMemo(() => {
+    const thumbnailEvent = events.find((e) => e.step === "thumbnail" && e.status === "completed")
+    return thumbnailEvent?.payload?.image_id as string | undefined
   }, [events])
 
   const isCompleted = useMemo(() => {
@@ -54,9 +59,9 @@ export const useJobState = (events: JobEvent[]) => {
   const errorEvent = useMemo(() => {
     if (!events.length) return null
     const latest = [...events].reverse()
-    return latest.find((event) => 
-      event.step === "error" || 
-      event.status === "failed" || 
+    return latest.find((event) =>
+      event.step === "error" ||
+      event.status === "failed" ||
       event.status === "error"
     ) ?? null
   }, [events])
@@ -64,16 +69,16 @@ export const useJobState = (events: JobEvent[]) => {
   const jobError = useMemo(() => {
     if (!errorEvent) return null
     const payload = errorEvent.payload ?? {}
-    
+
     // Check for user_message first
     const userMessage = typeof payload["user_message"] === "string" ? payload["user_message"] : undefined
     if (userMessage) return userMessage
-    
+
     // Fallback to technical message
     const message = typeof payload["message"] === "string" ? payload["message"] : undefined
     const reason = typeof payload["reason"] === "string" ? payload["reason"] : undefined
     const error = typeof payload["error"] === "string" ? payload["error"] : undefined
-    
+
     return userMessage ?? message ?? reason ?? error ?? "Something went wrong. Please try again."
   }, [errorEvent])
 
@@ -86,8 +91,8 @@ export const useJobState = (events: JobEvent[]) => {
       const status = eventForStep?.status
         ? eventForStep.status
         : isCompleted && step === "done"
-        ? "completed"
-        : "pending"
+          ? "completed"
+          : "pending"
 
       return {
         step,
@@ -104,6 +109,7 @@ export const useJobState = (events: JobEvent[]) => {
     videoTitle,
     summary,
     thumbnailUrl,
+    imageId,
     activeStepKey,
     timelineSteps,
     jobError,

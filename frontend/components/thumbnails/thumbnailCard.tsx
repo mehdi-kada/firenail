@@ -2,10 +2,7 @@
 
 import * as React from 'react'
 import Image from 'next/image'
-import { Edit2 } from 'lucide-react'
-
 import { Button } from '@/components/ui/button'
-import { EditThumbnailDialog } from './EditThumbnailDialog'
 
 type ThumbnailCardProps = {
   id: string
@@ -14,7 +11,6 @@ type ThumbnailCardProps = {
   createdAt?: string | Date | null
   keywords?: string[] | null
   onDownload?: () => void
-  onRegenerate?: (newThumbnail: any) => void
   secondaryHref?: string
   priority?: boolean
 }
@@ -26,12 +22,10 @@ export function ThumbnailCard({
   createdAt,
   keywords,
   onDownload,
-  onRegenerate,
   secondaryHref,
   priority = false,
 }: ThumbnailCardProps) {
   const [imageError, setImageError] = React.useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
 
   const formattedDate = React.useMemo(() => {
     if (!createdAt) return null
@@ -54,7 +48,7 @@ export function ThumbnailCard({
   const secondaryUrl = secondaryHref ?? storageUrl
 
   const handleImageError = () => {
-    
+
     setImageError(true)
   }
 
@@ -72,7 +66,7 @@ export function ThumbnailCard({
       window.URL.revokeObjectURL(url);
       if (onDownload) onDownload();
     } catch (error) {
-      
+
     }
   };
 
@@ -93,17 +87,6 @@ export function ThumbnailCard({
                 placeholder="blur"
                 blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzAwIiBoZWlnaHQ9IjQ3NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiLz4="
               />
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  className="h-8 w-8 bg-background/80 hover:bg-background text-foreground backdrop-blur-sm"
-                  onClick={() => setIsEditDialogOpen(true)}
-                >
-                  <Edit2 className="h-4 w-4" />
-                  <span className="sr-only">Edit</span>
-                </Button>
-              </div>
             </>
           ) : (
             <div className="flex h-full w-full items-center justify-center text-text/50 text-sm">
@@ -126,13 +109,6 @@ export function ThumbnailCard({
             <Button onClick={downloadImage} className="flex-1 bg-primary text-text font-bold hover:bg-opacity-90">
               Download
             </Button>
-            <Button
-              variant="outline"
-              className="border-border bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground px-3"
-              onClick={() => setIsEditDialogOpen(true)}
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
           </div>
 
           <Button
@@ -146,16 +122,6 @@ export function ThumbnailCard({
           </Button>
         </div>
       </div>
-
-      <EditThumbnailDialog
-        isOpen={isEditDialogOpen}
-        onClose={() => setIsEditDialogOpen(false)}
-        thumbnailId={id}
-        imageUrl={storageUrl}
-        onSuccess={(newThumbnail) => {
-          if (onRegenerate) onRegenerate(newThumbnail)
-        }}
-      />
     </>
   )
 }

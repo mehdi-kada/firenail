@@ -5,7 +5,7 @@ import { UrlInputForm } from "@/components/generate/urlInputForm"
 import { JobRealtime } from "@/components/generate/JobRealtime"
 import { createClient } from "@/lib/supabase/client"
 
-const JOB_TIMEOUT_MS = 60000
+const JOB_TIMEOUT_MS = 300000 // 5 minutes
 
 export function GenerateContainer() {
   const [jobId, setJobId] = useState<string | null>(null)
@@ -17,9 +17,9 @@ export function GenerateContainer() {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        
+
       } else {
-        
+
       }
     };
     checkSession();
@@ -32,7 +32,7 @@ export function GenerateContainer() {
     }
 
     const timeoutId = setTimeout(() => {
-      
+
       setHasTimedOut(true)
       setIsGenerating(false)
     }, JOB_TIMEOUT_MS)

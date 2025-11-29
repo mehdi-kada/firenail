@@ -20,7 +20,7 @@ export function JobRealtime({ jobId, onJobComplete, onJobError, hasTimedOut }: J
 
   const { events, isLoading, error } = useJobEvents(jobId)
 
-  const { isCompleted, hasError, currentStep, videoTitle, summary, thumbnailUrl, jobError } = useJobState(events)
+  const { isCompleted, hasError, currentStep, videoTitle, summary, thumbnailUrl, imageId, jobError } = useJobState(events)
 
   const isStarting = Boolean(jobId) && events.length === 0 && !error && !hasTimedOut
   const displayStep = isStarting ? "Starting..." : currentStep
@@ -47,12 +47,12 @@ export function JobRealtime({ jobId, onJobComplete, onJobError, hasTimedOut }: J
       completionReportedRef.current = true
     }
   }, [hasError, isCompleted, jobId, onJobComplete, onJobError])
- 
+
 
 
   const handleDownload = () => {
     if (!thumbnailUrl) return
-    
+
     const link = document.createElement('a')
     link.href = thumbnailUrl
     link.download = `thumbnail-${Date.now()}.jpg`
@@ -118,6 +118,7 @@ export function JobRealtime({ jobId, onJobComplete, onJobError, hasTimedOut }: J
         {(!hasError || thumbnailUrl) && (
           <Thumbnail
             thumbnailUrl={thumbnailUrl ?? ""}
+            imageId={imageId}
             isCompleted={isCompleted}
             handleDownload={handleDownload}
           />
