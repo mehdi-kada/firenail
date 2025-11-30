@@ -1,0 +1,24 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies only
+RUN apk add --no-cache libc6-compat
+
+# Enable pnpm
+RUN corepack enable pnpm
+
+# Copy dependency files first (cached unless they change)
+COPY package.json pnpm-lock.yaml* ./
+
+# Install dependencies (this layer is cached)
+RUN pnpm i --frozen-lockfile
+
+# Copy the rest of the application
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Development command (will be overridden by docker-compose)
+CMD ["pnpm", "run", "dev"]
