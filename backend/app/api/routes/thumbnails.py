@@ -72,6 +72,7 @@ async def regenerate_thumbnail_route(
     db: AsyncSession = Depends(get_db),
 ):
     image = await db.get(Image, image_id)
+    print("just got image : ", image)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
     
@@ -85,6 +86,7 @@ async def regenerate_thumbnail_route(
             image_url=image.storage_public_url,
             prompt=request.prompt
         )
+        print("new url : ", new_url)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

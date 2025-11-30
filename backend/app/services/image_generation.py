@@ -29,7 +29,6 @@ def _download_image_to_base64(url: str, timeout: int = 10) -> str:
         
         content_type = response.headers.get('content-type', '').lower()
         if not any(img_type in content_type for img_type in ['image/', 'jpeg', 'png', 'jpg', 'webp']):
-            # Fallback: try to guess from extension if content-type is generic or missing
             if url.lower().endswith('.png'):
                 content_type = 'image/png'
             elif url.lower().endswith('.webp'):
@@ -52,7 +51,21 @@ def _download_image_to_base64(url: str, timeout: int = 10) -> str:
         raise
 
 
-def _generate_with_freepik(prompt: str, base64_images: List[str]) -> bytes:
+def _is_url_public(url: str, timeout: int = 5) -> bool:
+    """Check if a URL is publicly accessible."""
+    try:
+        response = requests.head(url, timeout=timeout, allow_redirects=True)
+        if response.status_code == 200:
+            return True
+        # Fallback to GET for servers that block HEAD
+        response = requests.get(url, timeout=timeout, stream=True, allow_redirects=True)
+        response.close()
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
+def _generate_with_freepik(prompt: str, reference_images: List[str]) -> bytes:
     """
     Internal helper to call Freepik API, poll for completion, and download the result.
     Returns the image bytes of the generated image.
@@ -64,7 +77,7 @@ def _generate_with_freepik(prompt: str, base64_images: List[str]) -> bytes:
     base_url = "https://api.freepik.com/v1/ai/text-to-image/seedream-v4-edit"
     
     payload = {
-        "reference_images": base64_images,
+        "reference_images": reference_images,
         "prompt": prompt,
         "aspect_ratio": "widescreen_16_9",
     }
@@ -74,7 +87,7 @@ def _generate_with_freepik(prompt: str, base64_images: List[str]) -> bytes:
         "Content-Type": "application/json"
     }
     
-    print(f"Sending request to Freepik API with {len(base64_images)} base64 images")
+    print(f"Sending request to Freepik API with {len(reference_images)} reference images")
     
     response = requests.post(base_url, json=payload, headers=headers, timeout=60)
     
@@ -148,25 +161,30 @@ def generate_thumbnail(
     if not reference_image_urls:
         raise ValueError("At least one reference image URL is required")
     
-    print(f"Downloading and converting {len(reference_image_urls)} images to base64...")
+    print(f"Processing {len(reference_image_urls)} images...")
     
-    # Download and convert images to base64 (limit to first 3)
-    base64_images = []
+    # Process images
+    processed_images = []
     for url in reference_image_urls[:3]:
         try:
-            base64_image = _download_image_to_base64(url)
-            base64_images.append(base64_image)
+            if _is_url_public(url):
+                print(f"URL is public, using directly: {url}")
+                processed_images.append(url)
+            else:
+                print(f"URL not public, downloading and converting: {url}")
+                base64_image = _download_image_to_base64(url)
+                processed_images.append(base64_image)
         except Exception as e:
             print(f"Failed to process image {url}: {e}")
             continue
     
-    if not base64_images:
-        raise ValueError("No valid images could be downloaded and converted")
+    if not processed_images:
+        raise ValueError("No valid images could be processed")
     
-    print(f"Successfully converted {len(base64_images)} images to base64 out of {len(reference_image_urls[:3])}")
+    print(f"Successfully processed {len(processed_images)} images out of {len(reference_image_urls[:3])}")
     
     try:
-        image_content = _generate_with_freepik(prompt, base64_images)
+        image_content = _generate_with_freepik(prompt, processed_images)
         thumbnail_url = upload_thumbnail(job_id, image_content)
         return thumbnail_url
     except Exception as e:
@@ -187,7 +205,12 @@ def regenerate_thumbnail(
 
     print(f"Preparing source image from {image_url}...")
     try:
-        base64_image = _download_image_to_base64(image_url)
+        if _is_url_public(image_url):
+            print(f"URL is public, using directly: {image_url}")
+            processed_image = image_url
+        else:
+            print(f"URL not public, downloading and converting: {image_url}")
+            processed_image = _download_image_to_base64(image_url)
     except Exception as e:
         raise ValueError(f"Failed to process source image: {e}")
     
@@ -195,7 +218,7 @@ def regenerate_thumbnail(
     full_prompt = f"Edit this YouTube thumbnail based on the following instruction: {prompt}. Ensure the result is a high-quality, eye-catching YouTube thumbnail."
 
     try:
-        image_content = _generate_with_freepik(full_prompt, [base64_image])
+        image_content = _generate_with_freepik(full_prompt, [processed_image])
         thumbnail_url = upload_thumbnail(job_id, image_content)
         return thumbnail_url
     except Exception as e:

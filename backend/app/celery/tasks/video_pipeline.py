@@ -91,7 +91,6 @@ def process_video_pipeline(self, job_id: str):
     emit("job", "processing", {"video_url": video_url}, SUCCESS_MESSAGES["queued"])
 
     try:
-        # Step 1: Fetch video data (metadata + transcript in one request)
         emit("metadata", "started", user_message="Loading video information and captions...")
         try:
             video_data = transcripts.fetch_video_data(video_url)
@@ -103,7 +102,6 @@ def process_video_pipeline(self, job_id: str):
                 "transcript_length": len(transcript_text)
             }, SUCCESS_MESSAGES["metadata_fetched"])
             
-            # Validate transcript length
             if not transcript_text or len(transcript_text.strip()) < 50:
                 user_error = ERROR_MESSAGES["no_transcript"]
                 emit("metadata", "failed", {"error": "Transcript too short"}, user_error)
@@ -115,7 +113,6 @@ def process_video_pipeline(self, job_id: str):
             emit("metadata", "failed", {"error": str(exc)}, user_error)
             raise ValueError(user_error) from exc
         
-        # Step 2: Analyze content
         emit("analysis", "started", user_message="Analyzing video content...")
         try:
             prompt = analysis_prompt(transcript_text, video_title)
@@ -138,7 +135,6 @@ def process_video_pipeline(self, job_id: str):
             emit("analysis", "failed", {"error": str(exc)}, user_error)
             raise ValueError(user_error) from exc
 
-        # Step 3: Search for reference images
         emit("images", "started", user_message="Finding reference images...")
         image_urls = []
         failed_keywords = []
@@ -158,6 +154,7 @@ def process_video_pipeline(self, job_id: str):
                 logger.error(f"Error searching images for '{keyword}': {exc}")
                 return None
 
+        # searching for images in parallel 
         with ThreadPoolExecutor(max_workers=len(search_keywords)) as executor:
             future_to_keyword = {executor.submit(search_image, kw): kw for kw in search_keywords}
             for future in as_completed(future_to_keyword):
@@ -186,7 +183,6 @@ def process_video_pipeline(self, job_id: str):
             "found_for": [img["keyword"] for img in image_urls]
         }, SUCCESS_MESSAGES["images_found"])
 
-        # Step 4: Generate thumbnail
         thumbnail_url = None
         image_id = None
         if len(image_urls) >= 1:
@@ -203,7 +199,6 @@ def process_video_pipeline(self, job_id: str):
                     reference_image_urls=[p["url"] for p in image_urls[:MAX_IMAGES_FOR_THUMBNAIL]]
                 )
                 
-                # Save to database immediately to get the ID
                 with sessionLocal() as session:
                     job = session.get(Job, job_uuid)
                     if job:
@@ -260,7 +255,6 @@ def process_video_pipeline(self, job_id: str):
                 raise ValueError(user_error) from e
             except Exception as e:
                 user_error = _get_user_friendly_error(e)
-                # Truncate error log
                 error_log = str(e)
                 if len(error_log) > 500:
                     error_log = error_log[:500] + "... (truncated)"
@@ -268,7 +262,6 @@ def process_video_pipeline(self, job_id: str):
                 emit("thumbnail", "failed", {"error": error_log}, user_error)
                 raise ValueError(user_error) from e
 
-        # Step 5: Update job status
         with sessionLocal() as session:
             job = session.get(Job, job_uuid)
             if job:
@@ -288,11 +281,9 @@ def process_video_pipeline(self, job_id: str):
         return {"status": "success", "thumbnail_url": thumbnail_url, "image_id": image_id}
 
     except Exception as exc:
-        # Emit user-friendly error
         user_error = _get_user_friendly_error(exc) if not isinstance(exc, ValueError) else str(exc)
         emit("error", "failed", {"error": str(exc)}, user_error)
         
-        # Update job status
         with sessionLocal() as session:
             job = session.get(Job, job_uuid)
             if job:
