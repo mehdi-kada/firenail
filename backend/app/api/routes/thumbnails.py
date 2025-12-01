@@ -44,7 +44,7 @@ async def list_thumbnails(
         ThumbnailResponse(
             id=image.id,
             job_id=image.job_id,
-            storage_url=image.storage_public_url,
+            storage_url=image.storage_public_url or [],
             video_title=image.video_title,
             keywords=image.keywords or [],
             created_at=image.created_at,
@@ -81,37 +81,37 @@ async def regenerate_thumbnail_route(
 
     # 2. Regenerate
     try:
+        # Use the latest image for regeneration
+        # Ensure it's a list
+        current_urls = image.storage_public_url if isinstance(image.storage_public_url, list) else [image.storage_public_url]
+        current_url = current_urls[-1]
+        
         new_url = regenerate_thumbnail(
             job_id=str(image.job_id),
-            image_url=image.storage_public_url,
+            image_url=current_url,
             prompt=request.prompt
         )
         print("new url : ", new_url)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # 3. Create new Image record
-    new_image = Image(
-        job_id=image.job_id,
-        profile_id=profile.id,
-        video_title=image.video_title,
-        keywords=image.keywords,
-        firecrawl_payload=image.firecrawl_payload,
-        storage_public_url=new_url,
-    )
-    db.add(new_image)
+    # 3. Update Image record
+    # Create a new list to ensure SQLAlchemy detects the change
+    updated_urls = list(current_urls)
+    updated_urls.append(new_url)
+    image.storage_public_url = updated_urls
     
     # 4. Update subscription usage
     await increment_image_count(profile.id, db)
     
     await db.commit()
-    await db.refresh(new_image)
+    await db.refresh(image)
 
     return ThumbnailResponse(
-        id=new_image.id,
-        job_id=new_image.job_id,
-        storage_url=new_image.storage_public_url,
-        video_title=new_image.video_title,
-        keywords=new_image.keywords or [],
-        created_at=new_image.created_at,
+        id=image.id,
+        job_id=image.job_id,
+        storage_url=image.storage_public_url,
+        video_title=image.video_title,
+        keywords=image.keywords or [],
+        created_at=image.created_at,
     )

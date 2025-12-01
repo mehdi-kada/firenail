@@ -8,7 +8,7 @@ from pydantic import BaseModel
 class ThumbnailResponse(BaseModel):
     id: UUID
     job_id: UUID
-    storage_url: Optional[str]
+    storage_url: Optional[list[str]]
     video_title: Optional[str]
     keywords: list[str]
     created_at: datetime

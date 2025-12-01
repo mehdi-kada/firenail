@@ -10,7 +10,7 @@ import { Pagination } from '@/components/ui/pagination'
 type ThumbnailResponse = {
   id: string
   job_id: string
-  storage_url: string
+  storage_url: string[]
   video_title?: string | null
   keywords: string[]
   created_at: string
@@ -43,7 +43,7 @@ export default function ThumbnailsPage() {
             page_size: 12,
           },
         })
-        
+
         setThumbnails(response.data.items)
         setTotalPages(response.data.total_pages)
         setTotal(response.data.total)
@@ -105,9 +105,10 @@ export default function ThumbnailsPage() {
                   createdAt={thumbnail.created_at}
                   keywords={thumbnail.keywords}
                   priority={index < 6}
-                  onRegenerate={(newThumbnail: ThumbnailResponse) => {
-                    setThumbnails((prev) => [newThumbnail, ...prev])
-                    setTotal((prev) => prev + 1)
+                  onRegenerate={(updatedThumbnail: ThumbnailResponse) => {
+                    setThumbnails((prev) =>
+                      prev.map((t) => (t.id === updatedThumbnail.id ? updatedThumbnail : t))
+                    )
                   }}
                 />
               ))}

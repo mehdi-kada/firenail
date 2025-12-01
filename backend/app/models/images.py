@@ -21,7 +21,7 @@ class Image(Base):
     video_title: Mapped[Optional[str]] = mapped_column(Text)
     keywords: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     firecrawl_payload: Mapped[Optional[dict]] = mapped_column(JSON)
-    storage_public_url: Mapped[Optional[str]] = mapped_column(Text)
+    storage_public_url: Mapped[List[str]] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     profile: Mapped["Profile"] = relationship("Profile", back_populates="images")
