@@ -4,6 +4,7 @@
 
 /* App theme tokens using Tailwind v4 @theme (drives bg/text/border utilities) */
 @theme {
+	--font-sans: "Space Grotesk", sans-serif;
 	--color-background: #1a1a1a; /* background black */
 	--color-foreground: #f5f5f5; /* text color */
 

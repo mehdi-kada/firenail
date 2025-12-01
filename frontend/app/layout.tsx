@@ -1,11 +1,5 @@
 import type { Metadata } from "next";
-import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-space-grotesk',
-});
 
 export const metadata: Metadata = {
   icons: {
@@ -25,8 +19,12 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
           rel="stylesheet"
         />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap"
+          rel="stylesheet"
+        />
       </head>
-      <body className={`${spaceGrotesk.className} antialiased bg-background text-foreground ${spaceGrotesk.variable}`}>
+      <body className="antialiased bg-background text-foreground font-sans">
         {children}
       </body>
     </html>

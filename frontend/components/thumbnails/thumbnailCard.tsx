@@ -4,6 +4,8 @@ import * as React from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 
+import { EditThumbnailDialog } from './EditThumbnailDialog'
+
 type ThumbnailCardProps = {
   id: string
   storageUrl: string
@@ -13,6 +15,7 @@ type ThumbnailCardProps = {
   onDownload?: () => void
   secondaryHref?: string
   priority?: boolean
+  onRegenerate?: (newThumbnail: any) => void
 }
 
 export function ThumbnailCard({
@@ -24,8 +27,10 @@ export function ThumbnailCard({
   onDownload,
   secondaryHref,
   priority = false,
+  onRegenerate,
 }: ThumbnailCardProps) {
   const [imageError, setImageError] = React.useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
 
   const formattedDate = React.useMemo(() => {
     if (!createdAt) return null
@@ -48,7 +53,6 @@ export function ThumbnailCard({
   const secondaryUrl = secondaryHref ?? storageUrl
 
   const handleImageError = () => {
-
     setImageError(true)
   }
 
@@ -66,7 +70,7 @@ export function ThumbnailCard({
       window.URL.revokeObjectURL(url);
       if (onDownload) onDownload();
     } catch (error) {
-
+      console.error('Download failed:', error)
     }
   };
 
@@ -109,6 +113,15 @@ export function ThumbnailCard({
             <Button onClick={downloadImage} className="flex-1 bg-primary text-text font-bold hover:bg-opacity-90">
               Download
             </Button>
+            {onRegenerate && (
+              <Button
+                onClick={() => setIsEditDialogOpen(true)}
+                variant="outline"
+                className="flex-1 border-primary/30 text-primary font-bold hover:bg-primary/10"
+              >
+                Edit
+              </Button>
+            )}
           </div>
 
           <Button
@@ -122,6 +135,18 @@ export function ThumbnailCard({
           </Button>
         </div>
       </div>
+
+      {onRegenerate && (
+        <EditThumbnailDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          thumbnailId={id}
+          imageUrl={storageUrl}
+          onSuccess={(newThumbnail) => {
+            onRegenerate(newThumbnail)
+          }}
+        />
+      )}
     </>
   )
 }
