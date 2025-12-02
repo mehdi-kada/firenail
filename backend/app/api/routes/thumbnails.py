@@ -79,10 +79,7 @@ async def regenerate_thumbnail_route(
     if not image.storage_public_url:
         raise HTTPException(status_code=400, detail="Image does not have a URL")
 
-    # 2. Regenerate
     try:
-        # Use the latest image for regeneration
-        # Ensure it's a list
         current_urls = image.storage_public_url if isinstance(image.storage_public_url, list) else [image.storage_public_url]
         current_url = current_urls[-1]
         
@@ -95,13 +92,10 @@ async def regenerate_thumbnail_route(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # 3. Update Image record
-    # Create a new list to ensure SQLAlchemy detects the change
     updated_urls = list(current_urls)
     updated_urls.append(new_url)
     image.storage_public_url = updated_urls
     
-    # 4. Update subscription usage
     await increment_image_count(profile.id, db)
     
     await db.commit()

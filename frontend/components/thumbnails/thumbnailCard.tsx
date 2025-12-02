@@ -4,6 +4,7 @@ import * as React from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { EditThumbnailDialog } from './EditThumbnailDialog'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 type ThumbnailCardProps = {
   id: string
@@ -32,7 +33,6 @@ export function ThumbnailCard({
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
   const [currentIndex, setCurrentIndex] = React.useState(0)
 
-  // Use storageUrl directly (it's a list now)
   const imageList = React.useMemo(() => {
     return storageUrl || []
   }, [storageUrl])
@@ -45,7 +45,7 @@ export function ThumbnailCard({
     if (currentIndex < imageList.length - 1) {
       setCurrentIndex((prev) => prev + 1)
     } else {
-      setCurrentIndex(0) // Loop back to start
+      setCurrentIndex(0) 
     }
   }
 
@@ -55,7 +55,7 @@ export function ThumbnailCard({
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1)
     } else {
-      setCurrentIndex(imageList.length - 1) // Loop to end
+      setCurrentIndex(imageList.length - 1)
     }
   }
 

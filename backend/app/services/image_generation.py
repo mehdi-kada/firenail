@@ -12,7 +12,7 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-def _download_image_to_base64(url: str, timeout: int = 10) -> str:
+def _download_image_to_base64(url: str, timeout: int = 20) -> str:
     """
     Download an image from a URL and convert it to base64 string.
     Returns base64 encoded string with data URI prefix (data:image/...;base64,...)
@@ -167,13 +167,9 @@ def generate_thumbnail(
     processed_images = []
     for url in reference_image_urls[:3]:
         try:
-            if _is_url_public(url):
-                print(f"URL is public, using directly: {url}")
-                processed_images.append(url)
-            else:
-                print(f"URL not public, downloading and converting: {url}")
-                base64_image = _download_image_to_base64(url)
-                processed_images.append(base64_image)
+            print(f"Downloading and converting image: {url}")
+            base64_image = _download_image_to_base64(url)
+            processed_images.append(base64_image)
         except Exception as e:
             print(f"Failed to process image {url}: {e}")
             continue
@@ -205,12 +201,8 @@ def regenerate_thumbnail(
 
     print(f"Preparing source image from {image_url}...")
     try:
-        if _is_url_public(image_url):
-            print(f"URL is public, using directly: {image_url}")
-            processed_image = image_url
-        else:
-            print(f"URL not public, downloading and converting: {image_url}")
-            processed_image = _download_image_to_base64(image_url)
+        print(f"Downloading and converting source image: {image_url}")
+        processed_image = _download_image_to_base64(image_url)
     except Exception as e:
         raise ValueError(f"Failed to process source image: {e}")
     

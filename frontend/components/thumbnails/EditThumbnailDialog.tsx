@@ -64,16 +64,18 @@ export function EditThumbnailDialog({
         prompt,
       })
 
-      // Add new version to history
+      const storageUrls = response.data.storage_url
+      const newUrl = Array.isArray(storageUrls) ? storageUrls[storageUrls.length - 1] : storageUrls
+
       const newVersion: ThumbnailVersion = {
         id: response.data.id,
-        url: response.data.storage_url,
+        url: newUrl,
       }
 
       setHistory([...history, newVersion])
-      setCurrentIndex(history.length) // Move to the new version
-      setPrompt('') // Reset prompt
-      onSuccess(response.data) // Notify parent component
+      setCurrentIndex(history.length)
+      setPrompt('')
+      onSuccess(response.data)
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to regenerate thumbnail')
     } finally {
@@ -100,7 +102,7 @@ export function EditThumbnailDialog({
 
         <div className="relative aspect-video w-full mb-4 overflow-hidden rounded-md bg-background border border-border">
           <Image
-            key={currentVersion.url} // Force re-render on URL change
+            key={currentVersion.url} 
             src={currentVersion.url}
             alt="Thumbnail to edit"
             fill
