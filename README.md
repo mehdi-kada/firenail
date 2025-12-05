@@ -38,6 +38,7 @@ The codebase is split into a FastAPI + Celery backend (`backend/`) and a Next.js
 - Background Celery pipeline (`backend/app/celery/tasks/video_pipeline.py`) that orchestrates metadata, analysis, crawling, and generation stages.
 - Firecrawl-powered reference harvesting (`backend/app/services/crawl.py`) with retry-aware HTTP sessions.
 - Freepik thumbnail synthesis and Supabase storage uploads (`backend/app/services/image_generation.py`, `backend/app/services/storage.py`).
+- **Thumbnail Editing**: Regenerate thumbnails with custom prompts using the `EditThumbnailDialog` component, powered by Freepik's image-to-image editing capabilities.
 - Supabase-authenticated REST API with profile auto-provisioning (`backend/app/auth/validate.py`).
 - Job event audit trail persisted to Supabase (`backend/app/services/events.py`) and surfaced live in the UI.
 - Subscription-aware usage limits plus Polar checkout, portal, and webhook orchestration (`backend/app/services/subscription_services/`).
@@ -66,7 +67,7 @@ Each transition logs a `job_events` record so the frontend can reflect progress,
   - `transcripts.py` downloads metadata and transcripts using `yt-dlp` and `youtube-transcript-api`.
   - `analysis.py` posts rich prompts to Groq's `moonshotai/kimi-k2-instruct-0905` model and parses structured JSON.
   - `crawl.py` talks to Firecrawl v2 for inspirational imagery with retry logic.
-  - `image_generation.py` validates references, calls Freepik's AI endpoint, and persists results via `storage.upload_thumbnail`.
+  - `image_generation.py` validates references, calls Freepik's AI endpoint for generation and regeneration (`regenerate_thumbnail`), and persists results via `storage.upload_thumbnail`.
   - `events.py` records canonical job events into Supabase for realtime updates.
   - `subscription_services/` centralises Polar API access, entitlement tracking, and usage limit enforcement.
 - **Persistence**: SQLAlchemy models live under `backend/app/models/` with Alembic migrations in `backend/alembic/`. Async APIs use Postgres through `DATABASE_URL`, while Celery relies on the sync engine for transactional writes.
@@ -76,6 +77,7 @@ Each transition logs a `job_events` record so the frontend can reflect progress,
 - Primary user flows:
   - `app/(app)/generate/page.tsx`: hero page with `GenerateContainer` for URL submission.
   - `components/generate/JobRealtime.tsx`: subscribes to Supabase `job_events` for live status, transcript summaries, and thumbnail previews with download support.
+  - `components/thumbnails/EditThumbnailDialog.tsx`: allows users to regenerate thumbnails with custom instructions, maintaining a history of versions.
   - Subscription-aware gating via components in `components/subscription/` using hooks in `frontend/hooks/useSubscription.ts`.
 - Supabase SSR/CSR helpers in `frontend/lib/supabase/` keep authentication consistent across server and client components and power middleware-free session hydration.
 - Axios client (`frontend/lib/axios/axios.ts`) wraps every REST call, automatically attaching Supabase JWTs and handling 401 redirects back to `/auth/login`.
@@ -168,6 +170,28 @@ pnpm dev
 ```
 The Next.js dev server runs at `http://localhost:3000` and proxies API calls to the backend via `NEXT_PUBLIC_BACKEND_URL`.
 
+### Testing
+The backend includes a suite of tests using `pytest`. To run them:
+
+```bash
+cd backend
+source .venv/bin/activate
+pytest
+```
+Tests cover service logic, API endpoints, and integration scenarios.
+
+## Deployment
+The project includes a GitHub Action (`.github/workflows/deploy.yml`) for automated deployment to DigitalOcean.
+- Triggers on push to `main`.
+- Connects to a DigitalOcean Droplet via SSH.
+- Pulls the latest code.
+- Rebuilds and restarts containers using Docker Compose.
+
+Required GitHub Secrets:
+- `DROPLET_HOST`: IP address of the Droplet.
+- `DROPLET_USERNAME`: SSH username (usually `root`).
+- `DROPLET_SSH_KEY`: Private SSH key for authentication.
+
 ## Database & Migrations
 - Models live in `backend/app/models/` (Jobs, Videos, Images, Profiles, Subscriptions, JobEvents).
 - Alembic configuration is under `backend/alembic/` with existing revisions seeded for the schema.
@@ -195,6 +219,7 @@ The Next.js dev server runs at `http://localhost:3000` and proxies API calls to 
 | `POST /api/tasks/` | Queue thumbnail generation for a YouTube URL. Returns job ID. | Supabase Bearer |
 | `GET /api/tasks/{task_id}` | Retrieve status of a queued job. | Supabase Bearer |
 | `GET /api/thumbnails/` | Paginated list of generated thumbnails for the current user. | Supabase Bearer |
+| `POST /api/thumbnails/{id}/regenerate` | Regenerate a thumbnail with a custom prompt. | Supabase Bearer |
 | `POST /api/subscription/create-checkout` | Start Polar checkout for a plan. | Supabase Bearer |
 | `GET /api/subscription/status` | Fetch current subscription status. | Supabase Bearer |
 | `GET /api/customer-portal` | Obtain Polar customer portal link. | Supabase Bearer |
