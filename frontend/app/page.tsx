@@ -13,7 +13,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <LandingNav/>
-      <main className="flex flex-col gap-0 lg:-mt-10 flex-1 w-full">
+      <main className="flex flex-col gap-0 flex-1 w-full">
         <Hero />
         <Features />
         <HowItWorks />

@@ -1,213 +1,98 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
-import AnimatedBackground from '@/components/ui/AnimatedBackground';
-import { motion } from 'framer-motion';
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Play, Sparkles } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import BeforeAfterSlider from "./BeforeAfterSlider";
 
 export default function Hero() {
-  const typedRef = useRef<HTMLSpanElement>(null);
-  const [sliderPosition, setSliderPosition] = useState(50);
-  const [isDragging, setIsDragging] = useState(false);
-
-  useEffect(() => {
-    // Typing animation effect
-    if (typedRef.current) {
-      const phrases = [
-        'into Stunning Thumbnails',
-        'Analyzed by AI',
-        'to Professional Designs',
-        'in 3 Minutes'
-      ];
-      let phraseIndex = 0;
-      let charIndex = 0;
-      let isDeleting = false;
-
-      const type = () => {
-        const currentPhrase = phrases[phraseIndex];
-
-        if (!isDeleting && charIndex <= currentPhrase.length) {
-          if (typedRef.current) {
-            typedRef.current.textContent = currentPhrase.substring(0, charIndex);
-          }
-          charIndex++;
-          setTimeout(type, 100);
-        } else if (isDeleting && charIndex >= 0) {
-          if (typedRef.current) {
-            typedRef.current.textContent = currentPhrase.substring(0, charIndex);
-          }
-          charIndex--;
-          setTimeout(type, 50);
-        } else if (!isDeleting && charIndex > currentPhrase.length) {
-          setTimeout(() => {
-            isDeleting = true;
-            type();
-          }, 2000);
-        } else if (isDeleting && charIndex < 0) {
-          isDeleting = false;
-          phraseIndex = (phraseIndex + 1) % phrases.length;
-          setTimeout(type, 500);
-        }
-      };
-
-      type();
-    }
-  }, []);
-
-  const handleSliderMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
-    if (!isDragging && e.type !== 'mousedown' && e.type !== 'touchstart') return;
-
-    const container = e.currentTarget.getBoundingClientRect();
-    let clientX: number;
-
-    if ('touches' in e) {
-      clientX = e.touches[0].clientX;
-    } else {
-      clientX = e.clientX;
-    }
-
-    const x = clientX - container.left;
-    const percentage = (x / container.width) * 100;
-    setSliderPosition(Math.min(Math.max(percentage, 0), 100));
-  };
-
   return (
-    <section className="relative min-h-screen w-full flex items-center overflow-hidden pt-20 lg:pt-0">
-      {/* Content */}
-      <div className="relative z-[2] w-full">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Column - Text Content */}
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="space-y-8"
-            >
-              <div className="space-y-4">
-                <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
-                  <span className="bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent">
-                    YouTube URLs
-                  </span>
-                  <br />
-                  <span ref={typedRef} className="text-foreground min-h-[1.2em] inline-block">
-                    into Stunning Thumbnails
-                  </span>
-                  <span className="inline-block w-0.5 h-12 lg:h-16 bg-primary ml-1 animate-pulse align-middle" />
-                </h1>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4, duration: 0.8 }}
-                  className="text-xl text-muted-foreground leading-relaxed"
-                >
-                  Firenail&apos;s AI analyzes your video&apos;s transcript, mines visual inspiration,
-                  and generates on-brand thumbnails while you watch. No design skills required.
-                </motion.p>
-              </div>
+    <section className="relative w-full pt-30 pb-20 lg:pt-18 lg:pb-32 overflow-hidden">
+      {/* Background Gradients */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-radial-[circle_at_center_top] from-primary/20 via-background to-background opacity-50 blur-3xl -z-10" />
 
-              {/* CTA Buttons */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6, duration: 0.5 }}
-                className="flex flex-col sm:flex-row gap-4"
-              >
-                <button className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:scale-105 hover:shadow-lg hover:shadow-primary/40">
-                  Generate Your First Thumbnail
-                </button>
-                <button className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:scale-105">
-                  View Demo
-                </button>
-              </motion.div>
-            </motion.div>
-
-            {/* Right Column - Before/After Slider */}
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-              className="relative space-y-4"
-            >
-              {/* Before/After Slider */}
-              <div
-                className="relative rounded-xl overflow-hidden shadow-2xl cursor-ew-resize select-none border-4 border-card/50"
-                onMouseDown={(e) => {
-                  setIsDragging(true);
-                  handleSliderMove(e);
-                }}
-                onMouseMove={handleSliderMove}
-                onMouseUp={() => setIsDragging(false)}
-                onMouseLeave={() => setIsDragging(false)}
-                onTouchStart={(e) => {
-                  setIsDragging(true);
-                  handleSliderMove(e);
-                }}
-                onTouchMove={handleSliderMove}
-                onTouchEnd={() => setIsDragging(false)}
-              >
-                {/* Before Image (Background) */}
-                <div className="relative w-full aspect-video">
-                  <Image
-                    src="/before-thumbnail-v2.png"
-                    alt="Before - Manual Thumbnail Creation"
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-                  <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1 rounded-md text-sm font-semibold backdrop-blur-sm">
-                    BEFORE
-                  </div>
-                </div>
-
-                {/* After Image (Overlay with clip) */}
-                <div
-                  className="absolute inset-0"
-                  style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
-                >
-                  <Image
-                    src="/after-thumbnail-v2.png"
-                    alt="After - AI Generated Thumbnail"
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-                  <div className="absolute top-4 left-4 bg-primary/90 text-white px-3 py-1 rounded-md text-sm font-semibold shadow-lg">
-                    AFTER
-                  </div>
-                </div>
-
-                {/* Slider Line */}
-                <div
-                  className="absolute inset-y-0 w-1 bg-white shadow-[0_0_15px_rgba(0,0,0,0.5)] z-10"
-                  style={{ left: `${sliderPosition}%` }}
-                >
-                  {/* Slider Handle */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 text-primary">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Title Placeholder */}
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-foreground">
-                  Transform Your Content in Seconds
-                </h3>
-                <p className="text-muted-foreground mt-2">
-                  Drag the slider to see the difference
-                </p>
-              </div>
-            </motion.div>
-          </div>
-        </div>
+      {/* Hero Collage Background */}
+      <div className="absolute inset-0 w-full h-full -z-20 opacity-15 pointer-events-none select-none">
+        <Image
+          src="/hero-collage.png"
+          alt="Creative Collage"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/50 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-background/50" />
       </div>
 
-      {/* Animated Background - Full hero section */}
-      <div className="absolute inset-0 z-[1]">
-        <AnimatedBackground />
+      <div className="container mx-auto px-4 md:px-6 relative z-10">
+        <div className="flex flex-col items-center text-center gap-8 max-w-5xl mx-auto">
+
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm text-sm text-primary-foreground/80 hover:bg-white/10 transition-colors cursor-default"
+          >
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="font-medium bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+              AI-Powered Thumbnail Generation
+            </span>
+          </motion.div>
+
+          {/* Heading */}
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.1]"
+          >
+            Viral Thumbnails <br className="hidden md:block" />
+            <span className="bg-gradient-to-r from-primary via-orange-400 to-amber-500 bg-clip-text text-transparent">
+              in Seconds.
+            </span>
+          </motion.h1>
+
+          {/* Subheading */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed"
+          >
+            Stop wasting hours on design. Our AI analyzes your video content and generates high-CTR thumbnails instantly. Join 10,000+ creators growing faster.
+          </motion.p>
+
+          {/* Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center gap-4 mt-4"
+          >
+            <Link href="/generate">
+              <Button size="lg" className="h-12 px-8 text-lg rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_30px_-5px_var(--color-primary)] hover:shadow-[0_0_40px_-5px_var(--color-primary)] transition-all duration-300">
+                Generate for Free
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Hero Image / Demo Area */}
+        <motion.div
+          initial={{ opacity: 0, y: 60, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+          className="mt-16 w-full max-w-5xl mx-auto"
+        >
+          <BeforeAfterSlider
+            beforeImage="/before-thumbnail.png"
+            afterImage="/after-thumbnail.png"
+          />
+        </motion.div>
       </div>
     </section>
   );

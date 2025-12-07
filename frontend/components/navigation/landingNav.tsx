@@ -15,8 +15,16 @@ type LandingNavProps = {
 
 export function LandingNav({ className }: LandingNavProps) {
 	const [user, setUser] = useState<any>(null)
+	const [isScrolled, setIsScrolled] = useState(false)
 
 	useEffect(() => {
+		const handleScroll = () => {
+			setIsScrolled(window.scrollY > 20)
+		}
+
+		window.addEventListener("scroll", handleScroll)
+		handleScroll() // Check initial state
+
 		const supabase = createClient()
 
 		const checkUser = async () => {
@@ -33,18 +41,27 @@ export function LandingNav({ className }: LandingNavProps) {
 			setUser(session?.user ?? null)
 		})
 
-		return () => subscription.unsubscribe()
+		return () => {
+			window.removeEventListener("scroll", handleScroll)
+			subscription.unsubscribe()
+		}
 	}, [])
 	return (
 		<motion.header
 			initial={{ y: -20, opacity: 0 }}
 			animate={{ y: 0, opacity: 1 }}
 			transition={{ duration: 0.5, ease: "easeOut" }}
-			className="sticky top-0 z-40 w-full p-4 sm:p-6"
+			className={cn(
+				"fixed top-0 z-50 w-full transition-all duration-300 ease-in-out",
+				isScrolled ? "p-4 sm:p-6" : "py-6"
+			)}
 		>
 			<div
 				className={cn(
-					"mx-auto flex h-16 w-full max-w-6xl items-center justify-between rounded-lg border border-border/60 bg-background/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6 lg:px-8",
+					"mx-auto flex items-center justify-between transition-all duration-300 ease-in-out",
+					isScrolled
+						? "h-16 w-full max-w-6xl rounded-lg border border-border/60 bg-background/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:px-6 lg:px-8"
+						: "h-16 w-full max-w-7xl px-4 sm:px-6 lg:px-8 bg-transparent border-transparent",
 					className,
 				)}
 			>

@@ -5,33 +5,38 @@
 /* App theme tokens using Tailwind v4 @theme (drives bg/text/border utilities) */
 @theme {
 	--font-sans: "Space Grotesk", sans-serif;
-	--color-background: #1a1a1a; /* background black */
-	--color-foreground: #f5f5f5; /* text color */
 
-	--color-card: #2c2c2c; /* secondary background */
-	--color-card-foreground: #f5f5f5;
+	/* Premium Dark Mode Palette */
+	--color-background: #050505; /* Deep void black for depth */
+	--color-foreground: #ffffff; /* Crisp white for text */
 
-	--color-popover: #2c2c2c;
-	--color-popover-foreground: #f5f5f5;
+	--color-card: #121212; /* Slightly lighter black for cards */
+	--color-card-foreground: #ffffff;
 
-	--color-primary: #ff4d00; /* fire orange */
-	--color-primary-foreground: #f5f5f5;
+	--color-popover: #121212;
+	--color-popover-foreground: #ffffff;
 
-	--color-secondary: #2c2c2c;
-	--color-secondary-foreground: #f5f5f5;
+	--color-primary: #ff5500; /* Vibrant orange */
+	--color-primary-foreground: #ffffff;
 
-	--color-muted: #2c2c2c;
-	--color-muted-foreground: #cfcfcf;
+	--color-secondary: #1e1e1e; /* Subtle gray for secondary elements */
+	--color-secondary-foreground: #e5e5e5;
 
-	--color-accent: #333333;
-	--color-accent-foreground: #f5f5f5;
+	--color-muted: #2a2a2a;
+	--color-muted-foreground: #a3a3a3;
 
-	--color-destructive: #ef4444;
+	--color-accent: #2a2a2a;
+	--color-accent-foreground: #ffffff;
+
+	--color-destructive: #ff3333;
 	--color-destructive-foreground: #ffffff;
 
-	--color-border: #555555;
-	--color-input: #555555;
-	--color-ring: #ff4d00;
+	--color-border: #333333;
+	--color-input: #333333;
+	--color-ring: #ff5500;
+
+	/* Custom Gradients & Effects */
+	--image-glow: 0 0 140px -40px rgba(255, 85, 0, 0.5);
 }
 
 

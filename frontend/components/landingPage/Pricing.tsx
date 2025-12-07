@@ -1,152 +1,101 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const plans = [
+  {
+    name: "Starter",
+    price: "0",
+    description: "Perfect for testing the waters.",
+    features: ["5 Generates / month", "Standard Resolution", "Basic Styles", "Community Support"],
+    featured: false,
+  },
+  {
+    name: "Pro Creator",
+    price: "29",
+    description: "For serious YouTubers growing fast.",
+    features: ["Unlimited Generates", "4K Ultra-HD Downloads", "Advanced AI Styles", "Psd/Layer Export", "Priority Support"],
+    featured: true,
+  },
+  {
+    name: "Agency",
+    price: "99",
+    description: "Manage multiple channels with ease.",
+    features: ["Everything in Pro", "5 Team Members", "Brand Style Kits", "API Access", "Dedicated Success Manager"],
+    featured: false,
+  },
+];
 
 export default function Pricing() {
-  const plans = [
-    {
-      name: "Monthly",
-      description: "Flexible month-to-month subscription.",
-      price: 12.99,
-      period: "/mo",
-      features: [
-        "Unlimited video transcripts",
-        "Unlimited image generations",
-        "Priority email support",
-        "Advanced generation options",
-      ],
-      buttonText: "Subscribe Monthly",
-      buttonVariant: "secondary",
-      highlighted: false,
-    },
-    {
-      name: "Yearly",
-      description: "Save 36% with annual billing.",
-      price: 99.99,
-      period: "/year",
-      features: [
-        "Unlimited video transcripts",
-        "Unlimited image generations",
-        "Priority email support",
-        "Advanced generation options",
-      ],
-      buttonText: "Subscribe Yearly",
-      buttonVariant: "primary",
-      highlighted: true,
-    },
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2
-      }
-    }
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 40 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6
-      }
-    }
-  };
-
   return (
-    <section className="py-16 sm:py-24 space-y-12">
-      {/* Section Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-        className="text-center px-4"
-      >
-        <h2 className="text-foreground text-3xl sm:text-4xl font-bold leading-tight tracking-tight">
-          Find the Perfect Plan
-        </h2>
-        <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-          Start for free, or unlock powerful features to take your channel to the next level.
-        </p>
-      </motion.div>
-
-      {/* Pricing Cards Grid */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 max-w-3xl mx-auto"
-      >
-        {plans.map((plan, index) => (
-          <motion.div
-            key={index}
-            variants={cardVariants}
-            whileHover={{ y: -10 }}
-            className={`flex flex-col rounded-lg p-8 relative transition-colors ${plan.highlighted
-                ? "border-2 border-primary bg-card shadow-lg shadow-primary/20"
-                : "border border-border bg-card"
-              }`}
+    <section className="py-32 relative overflow-hidden" id="pricing">
+      <div className="container mx-auto px-4 md:px-6 relative z-10">
+        <div className="text-center max-w-3xl mx-auto mb-20">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-4xl md:text-5xl font-bold mb-6"
           >
-            {/* Most Popular Badge */}
-            {plan.highlighted && (
-              <div className="absolute right-0 top-0 bg-primary px-4 py-1 text-sm font-bold text-white rounded-bl-lg">
-                Most Popular
-              </div>
-            )}
+            Simple, Transparent Pricing
+          </motion.h2>
+          <p className="text-lg text-muted-foreground">
+            Choose the plan that fits your creation workflow. Cancel anytime.
+          </p>
+        </div>
 
-            {/* Plan Name */}
-            <h3 className="text-lg font-bold text-foreground mt-4">
-              {plan.name}
-            </h3>
-
-            {/* Plan Description */}
-            <p className="mt-2 text-muted-foreground text-sm">
-              {plan.description}
-            </p>
-
-            {/* Price */}
-            <div className="mt-6">
-              <span className="text-4xl font-bold text-foreground">
-                ${plan.price}
-              </span>
-              <span className="text-sm font-normal text-muted-foreground">
-                {plan.period}
-              </span>
-            </div>
-
-            {/* Features List */}
-            <ul className="mt-8 space-y-4 flex-grow">
-              {plan.features.map((feature, featureIndex) => (
-                <li
-                  key={featureIndex}
-                  className="flex items-center gap-3 text-sm text-foreground"
-                >
-                  <span className="material-symbols-outlined text-primary text-xl">
-                    check_circle
-                  </span>
-                  {feature}
-                </li>
-              ))}
-            </ul>
-
-            {/* CTA Button */}
-            <button
-              className={`mt-8 w-full rounded-full py-3 font-bold transition-all ${plan.highlighted
-                  ? "bg-primary text-primary-foreground hover:opacity-90"
-                  : "bg-primary/20 text-primary hover:bg-primary/30"
-                }`}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-center">
+          {plans.map((plan, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+              className={`relative p-8 rounded-3xl border ${plan.featured
+                  ? "bg-gradient-to-b from-card to-background border-primary/50 shadow-[0_0_40px_-10px_rgba(255,85,0,0.3)] z-10 scale-105"
+                  : "bg-card/40 border-white/5 hover:border-white/10"
+                } flex flex-col h-full`}
             >
-              {plan.buttonText}
-            </button>
-          </motion.div>
-        ))}
-      </motion.div>
+              {plan.featured && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                  Most Popular
+                </div>
+              )}
+
+              <div className="mb-8">
+                <h3 className="text-xl font-bold mb-2 text-foreground">{plan.name}</h3>
+                <p className="text-sm text-muted-foreground mb-6">{plan.description}</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">${plan.price}</span>
+                  <span className="text-muted-foreground">/mo</span>
+                </div>
+              </div>
+
+              <ul className="flex-1 space-y-4 mb-8">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <Check className={`w-5 h-5 ${plan.featured ? "text-primary" : "text-gray-500"}`} />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              <Button
+                variant={plan.featured ? "default" : "outline"}
+                className={`w-full rounded-xl h-12 ${plan.featured
+                    ? "bg-primary hover:bg-primary/90"
+                    : "border-white/10 hover:bg-white/5 hover:text-white"
+                  }`}
+              >
+                {plan.price === "0" ? "Start Free" : "Get Started"}
+              </Button>
+            </motion.div>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

@@ -1,96 +1,72 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
+import { Upload, Wand2, Download, ArrowRight } from "lucide-react";
+
+const steps = [
+  {
+    number: "01",
+    title: "Upload or Describe",
+    description: "Upload your raw video frame or simply describe what you want the thumbnail to look like.",
+    icon: Upload,
+  },
+  {
+    number: "02",
+    title: "AI Generation",
+    description: "Our engine analyzes the context and generates multiple high-conversion variations instantly.",
+    icon: Wand2,
+  },
+  {
+    number: "03",
+    title: "Download & Publish",
+    description: "Pick your favorite, make quick tweaks if needed, and download the high-res image.",
+    icon: Download,
+  },
+];
 
 export default function HowItWorks() {
-  const steps = [
-    {
-      number: "1",
-      title: "Provide Your Video Idea",
-      description: "Simply enter your video title, a brief description, or a few keywords.",
-    },
-    {
-      number: "2",
-      title: "AI Generates Options",
-      description: "Our AI analyzes your input and generates a variety of eye-catching thumbnail concepts.",
-    },
-    {
-      number: "3",
-      title: "Pick & Publish",
-      description: "Choose your favorite design, make optional tweaks, and download it instantly.",
-    },
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6
-      }
-    }
-  };
-
   return (
-    <section className="py-16 sm:py-24 space-y-12">
-      {/* Section Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-        className="text-center px-4"
-      >
-        <h2 className="text-foreground text-3xl sm:text-4xl font-bold leading-tight tracking-tight">
-          How It Works
-        </h2>
-        <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
-          Generate stunning thumbnails in three simple steps.
-        </p>
-      </motion.div>
-
-      {/* Steps Grid */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4 mx-auto"
-      >
-        {steps.map((step, index) => (
-          <motion.div
-            key={index}
-            variants={itemVariants}
-            className="flex flex-col items-center gap-4 text-center"
+    <section className="py-24 bg-card/30 relative border-y border-white/5">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="mb-16 md:text-center max-w-3xl mx-auto">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-5xl font-bold mb-6"
           >
-            {/* Step Number Circle */}
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary transition-transform hover:scale-110 duration-300">
-              <span className="text-3xl font-black">{step.number}</span>
-            </div>
+            From idea to image in <span className="text-primary italic">seconds</span>
+          </motion.h2>
+        </div>
 
-            {/* Step Title */}
-            <h3 className="text-xl font-bold text-foreground">
-              {step.title}
-            </h3>
+        <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+          {/* Connecting Line (Desktop) */}
+          <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-[2px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
-            {/* Step Description */}
-            <p className="text-sm text-muted-foreground">
-              {step.description}
-            </p>
-          </motion.div>
-        ))}
-      </motion.div>
+          {steps.map((step, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.2 }}
+              className="relative flex flex-col items-center text-center"
+            >
+              <div className="w-24 h-24 rounded-full bg-card border-4 border-background shadow-xl flex items-center justify-center mb-8 relative z-10 group">
+                <step.icon className="w-10 h-10 text-primary group-hover:scale-110 transition-transform duration-300" />
+                <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold border-4 border-background">
+                  {index + 1}
+                </div>
+              </div>
+
+              <h3 className="text-2xl font-bold mb-4">{step.title}</h3>
+              <p className="text-muted-foreground leading-relaxed max-w-sm">
+                {step.description}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
