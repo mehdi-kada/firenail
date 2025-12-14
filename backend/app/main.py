@@ -32,7 +32,6 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Exception handlers to ensure CORS headers on errors
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     return JSONResponse(
