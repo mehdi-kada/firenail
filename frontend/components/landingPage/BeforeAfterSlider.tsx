@@ -20,6 +20,7 @@ export default function BeforeAfterSlider({
     const [sliderPosition, setSliderPosition] = useState(50);
     const [isResizing, setIsResizing] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const requestRef = useRef<number | null>(null);
 
     const handleMouseDown = useCallback(() => {
         setIsResizing(true);
@@ -27,33 +28,43 @@ export default function BeforeAfterSlider({
 
     const handleMouseUp = useCallback(() => {
         setIsResizing(false);
+        if (requestRef.current !== null) {
+            cancelAnimationFrame(requestRef.current);
+            requestRef.current = null;
+        }
+    }, []);
+
+    const handleMove = useCallback((clientX: number) => {
+        if (!containerRef.current) return;
+
+        if (requestRef.current !== null) {
+            cancelAnimationFrame(requestRef.current);
+        }
+
+        requestRef.current = requestAnimationFrame(() => {
+            if (!containerRef.current) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+            const percentage = (x / rect.width) * 100;
+            setSliderPosition(percentage);
+            requestRef.current = null;
+        });
     }, []);
 
     const handleMouseMove = useCallback(
         (e: MouseEvent) => {
-            if (!isResizing || !containerRef.current) return;
-
-            const rect = containerRef.current.getBoundingClientRect();
-            const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-            const percentage = (x / rect.width) * 100;
-
-            setSliderPosition(percentage);
+            if (!isResizing) return;
+            handleMove(e.clientX);
         },
-        [isResizing]
+        [isResizing, handleMove]
     );
 
     const handleTouchMove = useCallback(
         (e: TouchEvent) => {
-            if (!isResizing || !containerRef.current) return;
-
-            const rect = containerRef.current.getBoundingClientRect();
-            const touch = e.touches[0];
-            const x = Math.max(0, Math.min(touch.clientX - rect.left, rect.width));
-            const percentage = (x / rect.width) * 100;
-
-            setSliderPosition(percentage);
+            if (!isResizing) return;
+            handleMove(e.touches[0].clientX);
         },
-        [isResizing]
+        [isResizing, handleMove]
     );
 
     useEffect(() => {
@@ -67,6 +78,9 @@ export default function BeforeAfterSlider({
             document.removeEventListener("mouseup", handleMouseUp);
             document.removeEventListener("touchmove", handleTouchMove);
             document.removeEventListener("touchend", handleMouseUp);
+            if (requestRef.current !== null) {
+                cancelAnimationFrame(requestRef.current);
+            }
         };
     }, [handleMouseMove, handleMouseUp, handleTouchMove]);
 
