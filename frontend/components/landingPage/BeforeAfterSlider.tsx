@@ -21,7 +21,16 @@ export default function BeforeAfterSlider({
     const [isResizing, setIsResizing] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    const rectRef = useRef<{ left: number; width: number } | null>(null);
+
     const handleMouseDown = useCallback(() => {
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            rectRef.current = {
+                left: rect.left + window.scrollX,
+                width: rect.width,
+            };
+        }
         setIsResizing(true);
     }, []);
 
@@ -31,11 +40,11 @@ export default function BeforeAfterSlider({
 
     const handleMouseMove = useCallback(
         (e: MouseEvent) => {
-            if (!isResizing || !containerRef.current) return;
+            if (!isResizing || !rectRef.current) return;
 
-            const rect = containerRef.current.getBoundingClientRect();
-            const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-            const percentage = (x / rect.width) * 100;
+            const { left, width } = rectRef.current;
+            const x = Math.max(0, Math.min(e.pageX - left, width));
+            const percentage = (x / width) * 100;
 
             setSliderPosition(percentage);
         },
@@ -44,12 +53,12 @@ export default function BeforeAfterSlider({
 
     const handleTouchMove = useCallback(
         (e: TouchEvent) => {
-            if (!isResizing || !containerRef.current) return;
+            if (!isResizing || !rectRef.current) return;
 
-            const rect = containerRef.current.getBoundingClientRect();
+            const { left, width } = rectRef.current;
             const touch = e.touches[0];
-            const x = Math.max(0, Math.min(touch.clientX - rect.left, rect.width));
-            const percentage = (x / rect.width) * 100;
+            const x = Math.max(0, Math.min(touch.pageX - left, width));
+            const percentage = (x / width) * 100;
 
             setSliderPosition(percentage);
         },
