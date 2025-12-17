@@ -33,7 +33,8 @@ export const useJobState = (events: JobEvent[]) => {
 
   const thumbnailUrl = useMemo(() => {
     const thumbnailEvent = events.find((e) => e.step === "thumbnail" && e.status === "completed")
-    return thumbnailEvent?.payload?.url as string | undefined
+    const url = thumbnailEvent?.payload?.url
+    return (Array.isArray(url) ? url[url.length - 1] : url) as string | undefined
   }, [events])
 
   const imageId = useMemo(() => {

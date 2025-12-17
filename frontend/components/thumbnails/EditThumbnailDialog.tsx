@@ -37,7 +37,8 @@ export function EditThumbnailDialog({
   // Initialize history when dialog opens
   useEffect(() => {
     if (isOpen) {
-      setHistory([{ id: thumbnailId, url: imageUrl }])
+      const normalizedUrl = Array.isArray(imageUrl) ? imageUrl[imageUrl.length - 1] : imageUrl
+      setHistory([{ id: thumbnailId, url: normalizedUrl || '' }])
       setCurrentIndex(0)
       setPrompt('')
       setError(null)
@@ -101,13 +102,15 @@ export function EditThumbnailDialog({
         <h2 className="text-xl font-bold mb-4 text-foreground">Edit Thumbnail</h2>
 
         <div className="relative aspect-video w-full mb-4 overflow-hidden rounded-md bg-background border border-border">
-          <Image
-            key={currentVersion.url} 
-            src={currentVersion.url}
-            alt="Thumbnail to edit"
-            fill
-            className="object-cover"
-          />
+          {currentVersion.url && (
+            <Image
+              key={currentVersion.url}
+              src={currentVersion.url}
+              alt="Thumbnail to edit"
+              fill
+              className="object-cover"
+            />
+          )}
 
           {/* Navigation controls */}
           {history.length > 1 && (

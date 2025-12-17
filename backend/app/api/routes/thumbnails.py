@@ -40,17 +40,22 @@ async def list_thumbnails(
     result = await db.execute(q)
     images = result.scalars().all()
 
-    items = [
-        ThumbnailResponse(
+    items = []
+    for image in images:
+        urls = image.storage_public_url
+        if isinstance(urls, str):
+            urls = [urls]
+        elif urls is None:
+            urls = []
+            
+        items.append(ThumbnailResponse(
             id=image.id,
             job_id=image.job_id,
-            storage_url=image.storage_public_url or [],
+            storage_url=urls,
             video_title=image.video_title,
             keywords=image.keywords or [],
             created_at=image.created_at,
-        )
-        for image in images
-    ]
+        ))
 
     total_pages = math.ceil(total / page_size) if total > 0 else 0
 

@@ -14,13 +14,15 @@ export default function Thumbnail({
   isCompleted: boolean,
   handleDownload: () => void
 }) {
-  const [currentThumbnailUrl, setCurrentThumbnailUrl] = useState(thumbnailUrl);
+  const getNormalizedUrl = (url: any) => Array.isArray(url) ? url[url.length - 1] : url;
+
+  const [currentThumbnailUrl, setCurrentThumbnailUrl] = useState(getNormalizedUrl(thumbnailUrl));
   const [currentImageId, setCurrentImageId] = useState(imageId);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     if (thumbnailUrl) {
-      setCurrentThumbnailUrl(thumbnailUrl);
+      setCurrentThumbnailUrl(getNormalizedUrl(thumbnailUrl));
     }
     if (imageId) {
       setCurrentImageId(imageId);
@@ -92,7 +94,9 @@ export default function Thumbnail({
           thumbnailId={currentImageId}
           imageUrl={currentThumbnailUrl}
           onSuccess={(newThumbnail) => {
-            setCurrentThumbnailUrl(newThumbnail.storage_url);
+            const urls = newThumbnail.storage_url;
+            const latestUrl = Array.isArray(urls) ? urls[urls.length - 1] : urls;
+            setCurrentThumbnailUrl(latestUrl);
             setCurrentImageId(newThumbnail.id);
           }}
         />
