@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { DotLottieReact } from "@lottiefiles/dotlottie-react"
 import api from '@/lib/axios/axios'
 
 interface ThumbnailVersion {
@@ -103,17 +104,31 @@ export function EditThumbnailDialog({
 
         <div className="relative aspect-video w-full mb-4 overflow-hidden rounded-md bg-background border border-border">
           {currentVersion.url && (
-            <Image
-              key={currentVersion.url}
-              src={currentVersion.url}
-              alt="Thumbnail to edit"
-              fill
-              className="object-cover"
-            />
+            <div className={`relative w-full h-full transition-all duration-500 ${isSubmitting ? 'blur-md brightness-50' : ''}`}>
+              <Image
+                key={currentVersion.url}
+                src={currentVersion.url}
+                alt="Thumbnail to edit"
+                fill
+                className="object-cover"
+              />
+            </div>
+          )}
+
+          {isSubmitting && (
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+              <div className="w-48 h-48">
+                <DotLottieReact
+                  src="https://lottie.host/7b402db5-8d25-42cd-93ef-f65004e61382/66dwbIRr0p.lottie"
+                  loop
+                  autoplay
+                />
+              </div>
+            </div>
           )}
 
           {/* Navigation controls */}
-          {history.length > 1 && (
+          {history.length > 1 && !isSubmitting && (
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5">
               <Button
                 type="button"
