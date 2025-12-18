@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { GenerateContainer } from "@/components/generate/GenerateContainer";
+
+export const metadata: Metadata = {
+  title: "Generate Thumbnail",
+  description: "Paste a YouTube URL and let AI generate professional thumbnails based on your video's content. Get stunning covers in seconds.",
+  openGraph: {
+    title: "Generate YouTube Thumbnails | Firenail",
+    description: "Paste a YouTube URL and let AI generate professional thumbnails based on your video's content.",
+  },
+};
 
 export default function GeneratePage() {
   return (
