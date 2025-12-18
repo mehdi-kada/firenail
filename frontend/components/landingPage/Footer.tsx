@@ -28,16 +28,16 @@ export default function Footer() {
           {/* Navigation Links */}
           <nav className="flex items-center gap-8">
             <Link
-              href="#"
+              href="/privacy"
               className="text-sm font-medium text-muted-foreground hover:text-white transition-colors duration-200"
             >
               Privacy Policy
             </Link>
             <Link
-              href="#"
+              href="/terms"
               className="text-sm font-medium text-muted-foreground hover:text-white transition-colors duration-200"
             >
-              Terms of Use
+              Terms of Service
             </Link>
           </nav>
 
