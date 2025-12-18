@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { SignUpForm } from "@/components/auth/registerForm";
+
+export const metadata: Metadata = {
+  title: "Create Account",
+  description: "Create your free Firenail account and start generating stunning AI-powered YouTube thumbnails today.",
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 
 export default function Register() {
   return (
