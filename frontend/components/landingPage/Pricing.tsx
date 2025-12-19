@@ -6,24 +6,27 @@ import { Button } from "@/components/ui/button";
 
 const plans = [
   {
-    name: "Starter",
-    price: "0",
-    description: "Perfect for testing the waters.",
-    features: ["5 Generates / month", "Standard Resolution", "Basic Styles", "Community Support"],
+    name: "Basic",
+    price: "Free",
+    suffix: "",
+    description: "For individuals getting started.",
+    features: ["Up to 5 video transcripts per month", "Up to 10 image generations", "Community support"],
     featured: false,
   },
   {
-    name: "Pro Creator",
-    price: "29",
-    description: "For serious YouTubers growing fast.",
-    features: ["Unlimited Generates", "4K Ultra-HD Downloads", "Advanced AI Styles", "Psd/Layer Export", "Priority Support"],
+    name: "Pro",
+    price: "$12.99",
+    suffix: "/month",
+    description: "For power users and small teams.",
+    features: ["Unlimited video transcripts", "Unlimited image generations", "Priority email support", "Advanced generation options"],
     featured: true,
   },
   {
-    name: "Agency",
-    price: "99",
-    description: "Manage multiple channels with ease.",
-    features: ["Everything in Pro", "5 Team Members", "Brand Style Kits", "API Access", "Dedicated Success Manager"],
+    name: "Pro",
+    price: "$99.99",
+    suffix: "/year",
+    description: "Best value - Save 35% annually!",
+    features: ["Unlimited video transcripts", "Unlimited image generations", "Priority email support", "Advanced generation options", "2 months free!"],
     featured: false,
   },
 ];
@@ -55,8 +58,8 @@ export default function Pricing() {
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
               className={`relative p-8 rounded-3xl border ${plan.featured
-                  ? "bg-gradient-to-b from-card to-background border-primary/50 shadow-[0_0_40px_-10px_rgba(255,85,0,0.3)] z-10 scale-105"
-                  : "bg-card/40 border-white/5 hover:border-white/10"
+                ? "bg-gradient-to-b from-card to-background border-primary/50 shadow-[0_0_40px_-10px_rgba(255,85,0,0.3)] z-10 scale-105"
+                : "bg-card/40 border-white/5 hover:border-white/10"
                 } flex flex-col h-full`}
             >
               {plan.featured && (
@@ -69,8 +72,8 @@ export default function Pricing() {
                 <h3 className="text-xl font-bold mb-2 text-foreground">{plan.name}</h3>
                 <p className="text-sm text-muted-foreground mb-6">{plan.description}</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">${plan.price}</span>
-                  <span className="text-muted-foreground">/mo</span>
+                  <span className="text-4xl font-bold">{plan.price}</span>
+                  <span className="text-muted-foreground">{plan.suffix}</span>
                 </div>
               </div>
 
@@ -86,8 +89,8 @@ export default function Pricing() {
               <Button
                 variant={plan.featured ? "default" : "outline"}
                 className={`w-full rounded-xl h-12 ${plan.featured
-                    ? "bg-primary hover:bg-primary/90"
-                    : "border-white/10 hover:bg-white/5 hover:text-white"
+                  ? "bg-primary hover:bg-primary/90"
+                  : "border-white/10 hover:bg-white/5 hover:text-white"
                   }`}
               >
                 {plan.price === "0" ? "Start Free" : "Get Started"}

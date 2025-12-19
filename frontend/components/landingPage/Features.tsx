@@ -31,8 +31,8 @@ const features = [
   },
   {
     icon: Zap,
-    title: "Batch Generation",
-    description: "Generate multiple variations at once and A/B test them to find your winning thumbnail.",
+    title: "Iterative Refinement",
+    description: "Not happy with the result? Regenerate your thumbnail with custom instructions to perfection.",
   },
 ];
 

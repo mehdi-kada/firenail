@@ -1,25 +1,25 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Upload, Wand2, Download, ArrowRight } from "lucide-react";
+import { Link, Wand2, Download, ArrowRight } from "lucide-react";
 
 const steps = [
   {
     number: "01",
-    title: "Upload or Describe",
-    description: "Upload your raw video frame or simply describe what you want the thumbnail to look like.",
-    icon: Upload,
+    title: "Paste YouTube Link",
+    description: "Simply paste the URL of your YouTube video. We'll automatically fetch the transcript and analyze the content.",
+    icon: Link,
   },
   {
     number: "02",
     title: "AI Generation",
-    description: "Our engine analyzes the context and generates multiple high-conversion variations instantly.",
+    description: "Our engine analyzes the context and generates a high-conversion thumbnail instantly.",
     icon: Wand2,
   },
   {
     number: "03",
     title: "Download & Publish",
-    description: "Pick your favorite, make quick tweaks if needed, and download the high-res image.",
+    description: "Download your high-res image directly, or regenerate it with custom feedback to get it perfect.",
     icon: Download,
   },
 ];
