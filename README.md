@@ -26,9 +26,9 @@
 ## Overview
 Firenail is a full-stack product designed to automate thumbnail production for YouTube creators. Paste a video URL, and the system:
 1. Fetches transcripts and metadata from YouTube.
-2. Summarises the content using Groq-hosted LLMs.
+2. Summarises the content using Cerebras-hosted LLMs.
 3. Mines Firecrawl for inspiration images that match the narrative.
-4. Crafts a cohesive thumbnail via Freepik's image generation API.
+4. Crafts a cohesive thumbnail via Google's Gemini 2.5 Flash Image model (via AI Gateway).
 5. Stores the artwork in Supabase while streaming progress updates to the UI through realtime channels.
 
 The codebase is split into a FastAPI + Celery backend (`backend/`) and a Next.js 15 frontend (`frontend/`) that meet in the middle through authenticated Supabase sessions and REST APIs.
@@ -37,8 +37,8 @@ The codebase is split into a FastAPI + Celery backend (`backend/`) and a Next.js
 - Transcript-driven creative direction with structured prompts in `backend/app/constants/prompts.py`.
 - Background Celery pipeline (`backend/app/celery/tasks/video_pipeline.py`) that orchestrates metadata, analysis, crawling, and generation stages.
 - Firecrawl-powered reference harvesting (`backend/app/services/crawl.py`) with retry-aware HTTP sessions.
-- Freepik thumbnail synthesis and Supabase storage uploads (`backend/app/services/image_generation.py`, `backend/app/services/storage.py`).
-- **Thumbnail Editing**: Regenerate thumbnails with custom prompts using the `EditThumbnailDialog` component, powered by Freepik's image-to-image editing capabilities.
+- High-fidelity thumbnail synthesis using Google Gemini 2.5 Flash Image via AI Gateway (`backend/app/services/image_generation.py`).
+- **Iterative Refinement**: Regenerate thumbnails with custom prompts using the `EditThumbnailDialog` component, powered by Gemini's multimodal editing capabilities.
 - Supabase-authenticated REST API with profile auto-provisioning (`backend/app/auth/validate.py`).
 - Job event audit trail persisted to Supabase (`backend/app/services/events.py`) and surfaced live in the UI.
 - Subscription-aware usage limits plus Polar checkout, portal, and webhook orchestration (`backend/app/services/subscription_services/`).
@@ -51,9 +51,9 @@ The codebase is split into a FastAPI + Celery backend (`backend/`) and a Next.js
 YouTube URL → FastAPI job (POST /api/tasks/) → Celery worker
   1. transcripts.fetch_metadata(url) → Video ID + Title
   2. transcripts.fetch_transcript(video_id) → Raw transcript
-  3. analysis.analyze_transcript(prompt) → Summary + keywords + style notes (Groq)
+  3. analysis.analyze_transcript(prompt) → Summary + keywords + style notes (Cerebras/Qwen)
   4. crawl.crawl_images(keyword) → Reference URLs (Firecrawl)
-  5. image_generation.generate_thumbnail(...) → Final artwork (Freepik)
+  5. image_generation.generate_thumbnail(...) → Final artwork (Gemini 2.5 via AI Gateway)
   6. storage.upload_thumbnail(...) → Supabase Storage URL
   7. events.record_event(...) → Supabase job_events row (Realtime)
   8. Database writes → jobs, videos, images, subscription counters
@@ -65,9 +65,9 @@ Each transition logs a `job_events` record so the frontend can reflect progress,
 - **Celery worker** (`backend/app/celery/celery_app.py`): consumes jobs via Redis queues and runs the heavy lifting in `process_video_pipeline`.
 - **Domain services** (`backend/app/services/`):
   - `transcripts.py` downloads metadata and transcripts using `yt-dlp` and `youtube-transcript-api`.
-  - `analysis.py` posts rich prompts to Groq's `moonshotai/kimi-k2-instruct-0905` model and parses structured JSON.
+  - `analysis.py` posts rich prompts to Cerebras's `qwen-3-235b-a22b-instruct-2507` model and parses structured JSON.
   - `crawl.py` talks to Firecrawl v2 for inspirational imagery with retry logic.
-  - `image_generation.py` validates references, calls Freepik's AI endpoint for generation and regeneration (`regenerate_thumbnail`), and persists results via `storage.upload_thumbnail`.
+  - `image_generation.py` validates references, calls AI Gateway (Gemini 2.5) for generation and regeneration (`regenerate_thumbnail`), and persists results via `storage.upload_thumbnail`.
   - `events.py` records canonical job events into Supabase for realtime updates.
   - `subscription_services/` centralises Polar API access, entitlement tracking, and usage limit enforcement.
 - **Persistence**: SQLAlchemy models live under `backend/app/models/` with Alembic migrations in `backend/alembic/`. Async APIs use Postgres through `DATABASE_URL`, while Celery relies on the sync engine for transactional writes.
@@ -87,8 +87,8 @@ Each transition logs a `job_events` record so the frontend can reflect progress,
 - **Supabase**: authentication, Postgres hosting, realtime channels, and asset storage (bucket `thumbnails`).
 - **Redis**: Celery broker/result backend (default `redis://localhost:6379/0`).
 - **Firecrawl**: image search inspiration, keyed by `FIRECRAWL_KEY`.
-- **Groq**: LLM content analysis through `GROQ_API_KEY`.
-- **Freepik**: thumbnail generation API via `FREEPIK_API_KEY`.
+- **Cerebras**: LLM content analysis through `CEREBRAS_API_KEY`.
+- **AI Gateway**: thumbnail generation (Gemini) via `AI_GATEWAY_API_KEY`.
 - **Polar**: subscription checkout, webhook ingestion, and customer portal management surfaced in both backend routes and frontend pricing flows.
 
 ## Getting Started
@@ -97,7 +97,8 @@ Each transition logs a `job_events` record so the frontend can reflect progress,
 - Node.js 20+ with `pnpm` (v10 recommended by `frontend/package.json`)
 - Docker & Docker Compose (for the quickest setup)
 - Supabase project with Postgres + Realtime enabled
-- API credentials: Groq, Firecrawl, Freepik, Polar
+- Supabase project with Postgres + Realtime enabled
+- API credentials: Cerebras, Firecrawl, AI Gateway (Gemini), Polar
 - Redis instance (Docker compose ships one automatically)
 
 ### Environment Variables
@@ -116,8 +117,9 @@ Create `.env` files at the repo root (consumed by docker-compose) and inside rel
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (needed for storage + job events) |
 | `SUPABASE_JWT_SECRET` | JWT secret for verifying access tokens |
 | `FIRECRAWL_KEY` | Firecrawl API key |
-| `GROQ_API_KEY` | Groq API key for transcript analysis |
-| `FREEPIK_API_KEY` | Freepik image generation key |
+| `CEREBRAS_API_KEY` | Cerebras API key for transcript analysis |
+| `AI_GATEWAY_API_KEY` | AI Gateway (OpenAI compatible) API key |
+| `AI_GATEWAY_BASE_OPENAI_COMPAT_URL` | Optional base URL for AI Gateway (defaults to Vercel's) |
 | `POLAR_ACCESS_TOKEN` | Polar API token (sandbox or production) |
 | `POLAR_WEBHOOK_SECRET` | Secret used to verify inbound Polar webhooks |
 | `APP_URL` | Public app URL (defaults to `http://localhost:3000`) |
