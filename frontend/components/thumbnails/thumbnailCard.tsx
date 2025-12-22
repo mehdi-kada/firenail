@@ -18,7 +18,7 @@ type ThumbnailCardProps = {
   onRegenerate?: (newThumbnail: any) => void
 }
 
-export function ThumbnailCard({
+const ThumbnailCardComponent = ({
   id,
   storageUrl,
   title,
@@ -28,7 +28,7 @@ export function ThumbnailCard({
   secondaryHref,
   priority = false,
   onRegenerate,
-}: ThumbnailCardProps) {
+}: ThumbnailCardProps) => {
   const [imageError, setImageError] = React.useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
   const [currentIndex, setCurrentIndex] = React.useState(0)
@@ -210,3 +210,7 @@ export function ThumbnailCard({
     </>
   )
 }
+
+// ⚡ Bolt: Wrapped in React.memo to prevent re-renders when parent state updates but this card's props remain unchanged.
+// This is especially useful in the grid of thumbnails where regenerating one image shouldn't re-render the others.
+export const ThumbnailCard = React.memo(ThumbnailCardComponent)
