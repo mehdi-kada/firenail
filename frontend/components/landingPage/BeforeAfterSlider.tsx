@@ -21,39 +21,63 @@ export default function BeforeAfterSlider({
     const [isResizing, setIsResizing] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Store latest cursor position to ensure we always render the most recent one
+    const latestClientX = useRef<number | null>(null);
+    const animationFrameId = useRef<number | null>(null);
+
     const handleMouseDown = useCallback(() => {
         setIsResizing(true);
     }, []);
 
     const handleMouseUp = useCallback(() => {
         setIsResizing(false);
+        // Cancel any pending frame when dragging stops
+        if (animationFrameId.current) {
+            cancelAnimationFrame(animationFrameId.current);
+            animationFrameId.current = null;
+        }
+    }, []);
+
+    const updateSliderPosition = useCallback(() => {
+        if (!containerRef.current || latestClientX.current === null) {
+            animationFrameId.current = null;
+            return;
+        }
+
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = Math.max(0, Math.min(latestClientX.current - rect.left, rect.width));
+        const percentage = (x / rect.width) * 100;
+
+        setSliderPosition(percentage);
+        animationFrameId.current = null;
     }, []);
 
     const handleMouseMove = useCallback(
         (e: MouseEvent) => {
             if (!isResizing || !containerRef.current) return;
 
-            const rect = containerRef.current.getBoundingClientRect();
-            const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-            const percentage = (x / rect.width) * 100;
+            latestClientX.current = e.clientX;
 
-            setSliderPosition(percentage);
+            // Throttle updates using requestAnimationFrame
+            if (animationFrameId.current) return;
+
+            animationFrameId.current = requestAnimationFrame(updateSliderPosition);
         },
-        [isResizing]
+        [isResizing, updateSliderPosition]
     );
 
     const handleTouchMove = useCallback(
         (e: TouchEvent) => {
             if (!isResizing || !containerRef.current) return;
 
-            const rect = containerRef.current.getBoundingClientRect();
-            const touch = e.touches[0];
-            const x = Math.max(0, Math.min(touch.clientX - rect.left, rect.width));
-            const percentage = (x / rect.width) * 100;
+            latestClientX.current = e.touches[0].clientX;
 
-            setSliderPosition(percentage);
+            // Throttle updates using requestAnimationFrame
+            if (animationFrameId.current) return;
+
+            animationFrameId.current = requestAnimationFrame(updateSliderPosition);
         },
-        [isResizing]
+        [isResizing, updateSliderPosition]
     );
 
     useEffect(() => {
@@ -67,6 +91,9 @@ export default function BeforeAfterSlider({
             document.removeEventListener("mouseup", handleMouseUp);
             document.removeEventListener("touchmove", handleTouchMove);
             document.removeEventListener("touchend", handleMouseUp);
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+            }
         };
     }, [handleMouseMove, handleMouseUp, handleTouchMove]);
 
