@@ -1,7 +1,7 @@
 import uuid
 from typing import List, Optional, TYPE_CHECKING
 from datetime import datetime
-from sqlalchemy import ForeignKey, DateTime, func, Text, JSON
+from sqlalchemy import ForeignKey, DateTime, func, Text, JSON, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -14,6 +14,9 @@ if TYPE_CHECKING:
 
 class Image(Base):
     __tablename__ = "images"
+    __table_args__ = (
+        Index('ix_images_profile_created', 'profile_id', 'created_at'),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False)
