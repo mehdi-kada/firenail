@@ -18,7 +18,7 @@ type ThumbnailCardProps = {
   onRegenerate?: (newThumbnail: any) => void
 }
 
-export function ThumbnailCard({
+const ThumbnailCardComponent = ({
   id,
   storageUrl,
   title,
@@ -28,7 +28,7 @@ export function ThumbnailCard({
   secondaryHref,
   priority = false,
   onRegenerate,
-}: ThumbnailCardProps) {
+}: ThumbnailCardProps) => {
   const [imageError, setImageError] = React.useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
   const [currentIndex, setCurrentIndex] = React.useState(0)
@@ -210,3 +210,5 @@ export function ThumbnailCard({
     </>
   )
 }
+
+export const ThumbnailCard = React.memo(ThumbnailCardComponent)
