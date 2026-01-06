@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { isAxiosError } from 'axios'
 
 import api from '@/lib/axios/axios'
@@ -67,6 +67,13 @@ export default function ThumbnailsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // Memoized callback to ensure ThumbnailCard props remain stable and effective React.memo usage
+  const handleRegenerate = useCallback((updatedThumbnail: ThumbnailResponse) => {
+    setThumbnails((prev) =>
+      prev.map((t) => (t.id === updatedThumbnail.id ? updatedThumbnail : t))
+    )
+  }, [])
+
   return (
     <div className="container mx-auto min-h-screen px-4 py-12 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto text-center">
@@ -105,11 +112,7 @@ export default function ThumbnailsPage() {
                   createdAt={thumbnail.created_at}
                   keywords={thumbnail.keywords}
                   priority={index < 6}
-                  onRegenerate={(updatedThumbnail: ThumbnailResponse) => {
-                    setThumbnails((prev) =>
-                      prev.map((t) => (t.id === updatedThumbnail.id ? updatedThumbnail : t))
-                    )
-                  }}
+                  onRegenerate={handleRegenerate}
                 />
               ))}
             </div>
