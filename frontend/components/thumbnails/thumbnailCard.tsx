@@ -18,7 +18,9 @@ type ThumbnailCardProps = {
   onRegenerate?: (newThumbnail: any) => void
 }
 
-export function ThumbnailCard({
+// Optimized: Wrapped in React.memo to prevent unnecessary re-renders when parent state updates
+// but props (like id, storageUrl) remain the same.
+export const ThumbnailCard = React.memo(function ThumbnailCard({
   id,
   storageUrl,
   title,
@@ -209,4 +211,4 @@ export function ThumbnailCard({
       )}
     </>
   )
-}
+})
