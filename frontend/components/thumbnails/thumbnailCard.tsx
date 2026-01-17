@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import { memo, useState, useMemo, type MouseEvent } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { EditThumbnailDialog } from './EditThumbnailDialog'
@@ -18,7 +18,8 @@ type ThumbnailCardProps = {
   onRegenerate?: (newThumbnail: any) => void
 }
 
-export function ThumbnailCard({
+// Memoized to prevent re-renders when parent state updates but props remain stable
+export const ThumbnailCard = memo(function ThumbnailCard({
   id,
   storageUrl,
   title,
@@ -29,17 +30,17 @@ export function ThumbnailCard({
   priority = false,
   onRegenerate,
 }: ThumbnailCardProps) {
-  const [imageError, setImageError] = React.useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
-  const [currentIndex, setCurrentIndex] = React.useState(0)
+  const [imageError, setImageError] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(0)
 
-  const imageList = React.useMemo(() => {
+  const imageList = useMemo(() => {
     return storageUrl || []
   }, [storageUrl])
 
   const currentImageUrl = imageList[currentIndex]
 
-  const handleNext = (e: React.MouseEvent) => {
+  const handleNext = (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (currentIndex < imageList.length - 1) {
@@ -49,7 +50,7 @@ export function ThumbnailCard({
     }
   }
 
-  const handlePrev = (e: React.MouseEvent) => {
+  const handlePrev = (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (currentIndex > 0) {
@@ -59,7 +60,7 @@ export function ThumbnailCard({
     }
   }
 
-  const formattedDate = React.useMemo(() => {
+  const formattedDate = useMemo(() => {
     if (!createdAt) return null
     try {
       const date = typeof createdAt === 'string' ? new Date(createdAt) : createdAt
@@ -73,7 +74,7 @@ export function ThumbnailCard({
     }
   }, [createdAt])
 
-  const keywordList = React.useMemo(() => (keywords ?? []).filter(Boolean), [keywords])
+  const keywordList = useMemo(() => (keywords ?? []).filter(Boolean), [keywords])
 
   const displayTitle = title || keywordList.join(', ') || 'Generated Thumbnail'
 
@@ -209,4 +210,4 @@ export function ThumbnailCard({
       )}
     </>
   )
-}
+})
