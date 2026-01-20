@@ -18,7 +18,7 @@ type ThumbnailCardProps = {
   onRegenerate?: (newThumbnail: any) => void
 }
 
-export function ThumbnailCard({
+function ThumbnailCardBase({
   id,
   storageUrl,
   title,
@@ -210,3 +210,5 @@ export function ThumbnailCard({
     </>
   )
 }
+
+export const ThumbnailCard = React.memo(ThumbnailCardBase)
