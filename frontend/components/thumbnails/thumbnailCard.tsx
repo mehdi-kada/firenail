@@ -18,7 +18,7 @@ type ThumbnailCardProps = {
   onRegenerate?: (newThumbnail: any) => void
 }
 
-export function ThumbnailCard({
+function ThumbnailCardBase({
   id,
   storageUrl,
   title,
@@ -210,3 +210,8 @@ export function ThumbnailCard({
     </>
   )
 }
+
+ThumbnailCardBase.displayName = 'ThumbnailCard'
+
+// Optimized with React.memo to prevent unnecessary re-renders when other list items change.
+export const ThumbnailCard = React.memo(ThumbnailCardBase)
