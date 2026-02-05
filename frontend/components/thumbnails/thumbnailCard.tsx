@@ -18,7 +18,10 @@ type ThumbnailCardProps = {
   onRegenerate?: (newThumbnail: any) => void
 }
 
-export function ThumbnailCard({
+// Optimized with React.memo to prevent unnecessary re-renders when parent updates.
+// This is particularly important in the grid view where regenerating one thumbnail
+// shouldn't cause all other cards to re-render.
+export const ThumbnailCard = React.memo(function ThumbnailCard({
   id,
   storageUrl,
   title,
@@ -209,4 +212,6 @@ export function ThumbnailCard({
       )}
     </>
   )
-}
+})
+
+ThumbnailCard.displayName = 'ThumbnailCard'
